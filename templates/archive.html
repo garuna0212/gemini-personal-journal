@@ -4,18 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Archives</title>
+    <title>Archive | Gemini Journal</title>
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body>
+<body class="archive-page">
 
     <div class="container">
 
-        <div class="page-header">
+        <div class="page-header archive-page-header">
 
-            <h1>Archives</h1>
+            <div>
+                <p class="eyebrow">PRIVATE ARCHIVE</p>
+
+                <h1>Archive</h1>
+
+                <p class="archive-page-subtitle">
+                    A quiet place for reflections you've chosen to set aside.
+                </p>
+            </div>
+
 
             <a href="/" class="back-link">
                 Back to Journal
@@ -26,84 +35,137 @@
 
         {% if entries %}
 
-            {% for entry in entries %}
+            <section class="archive-entries-section">
 
-                <div class="entry">
+                <div class="archive-section-heading">
 
-                    <div class="entry-header">
+                    <div>
+                        <p class="eyebrow">SAVED REFLECTIONS</p>
 
-                        <small>
-                            {{ entry.created_at }}
-                        </small>
-
-
-                        <div class="menu-wrapper">
-
-                            <button
-                                type="button"
-                                class="menu-button"
-                                onclick="toggleMenu('archive-menu-{{ entry.id }}')"
-                            >
-                                ⋮
-                            </button>
-
-
-                            <div
-                                id="archive-menu-{{ entry.id }}"
-                                class="entry-menu"
-                            >
-
-                                <form
-                                    action="/restore/{{ entry.id }}"
-                                    method="post"
-                                >
-                                    <button type="submit">
-                                        Restore
-                                    </button>
-                                </form>
-
-
-                                <form
-                                    action="/delete/{{ entry.id }}"
-                                    method="post"
-                                    onsubmit="return confirm('Delete this entry permanently?');"
-                                >
-                                    <button type="submit">
-                                        Delete
-                                    </button>
-                                </form>
-
-                            </div>
-
-                        </div>
-
+                        <h2>Archived entries</h2>
                     </div>
 
-
-                    <p class="entry-text">
-                        {{ entry.content }}
-                    </p>
-
-
-                    {% if entry.analysis %}
-
-                        <div class="saved-analysis">
-
-                            <h3>Gemini Analysis</h3>
-
-                            <p>{{ entry.analysis }}</p>
-
-                        </div>
-
-                    {% endif %}
+                    <span class="archive-count">
+                        {{ entries | length }}
+                        {% if entries | length == 1 %}
+                            entry
+                        {% else %}
+                            entries
+                        {% endif %}
+                    </span>
 
                 </div>
 
-            {% endfor %}
+
+                <div class="archive-entry-list">
+
+                    {% for entry in entries %}
+
+                        <article class="entry archive-entry-card">
+
+                            <div class="entry-header">
+
+                                <small class="entry-date">
+                                    {{ entry.created_at | india_datetime }}
+                                </small>
+
+
+                                <div class="menu-wrapper">
+
+                                    <button
+                                        type="button"
+                                        class="menu-button"
+                                        aria-label="Entry options"
+                                        onclick="toggleMenu('archive-menu-{{ entry.id }}')"
+                                    >
+                                        ⋮
+                                    </button>
+
+
+                                    <div
+                                        id="archive-menu-{{ entry.id }}"
+                                        class="entry-menu"
+                                    >
+
+                                        <form
+                                            action="/restore/{{ entry.id }}"
+                                            method="post"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="restore-entry-button"
+                                            >
+                                                Restore
+                                            </button>
+                                        </form>
+
+
+                                        <form
+                                            action="/delete/{{ entry.id }}"
+                                            method="post"
+                                            onsubmit="return confirm('Delete this entry permanently?');"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="archive-delete-button"
+                                            >
+                                                Delete permanently
+                                            </button>
+                                        </form>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <p class="entry-text">{{ entry.content | trim }}</p>
+
+
+                            {% if entry.analysis %}
+
+                                <div class="archive-analysis">
+
+                                    <div class="archive-analysis-heading">
+                                        ✦ Gemini Reflection
+                                    </div>
+
+                                    <p>{{ entry.analysis | trim }}</p>
+
+                                </div>
+
+                            {% endif %}
+
+                        </article>
+
+                    {% endfor %}
+
+                </div>
+
+            </section>
+
 
         {% else %}
 
-            <p>No archived entries yet.</p>
+            <section class="archive-empty-state">
+
+                <div class="archive-empty-icon">
+                    ◇
+                </div>
+
+                <h2>Your archive is empty</h2>
+
+                <p>
+                    Entries you archive from your journal will appear here.
+                    You can restore them whenever you want.
+                </p>
+
+                <a href="/" class="archive-return-button">
+                    Return to Journal
+                </a>
+
+            </section>
 
         {% endif %}
 
@@ -113,9 +175,45 @@
     <script>
 
         function toggleMenu(id) {
-            const menu = document.getElementById(id);
-            menu.classList.toggle("show-menu");
+
+            const selectedMenu =
+                document.getElementById(id);
+
+            document
+                .querySelectorAll(".entry-menu")
+                .forEach((menu) => {
+
+                    if (menu !== selectedMenu) {
+                        menu.classList.remove("show-menu");
+                    }
+
+                });
+
+            selectedMenu.classList.toggle("show-menu");
+
         }
+
+
+        document.addEventListener(
+            "click",
+            function(event) {
+
+                if (
+                    !event.target.closest(".menu-wrapper")
+                ) {
+
+                    document
+                        .querySelectorAll(".entry-menu")
+                        .forEach((menu) => {
+
+                            menu.classList.remove("show-menu");
+
+                        });
+
+                }
+
+            }
+        );
 
     </script>
 

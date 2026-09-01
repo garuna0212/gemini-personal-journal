@@ -9,13 +9,26 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body>
+<body class="chat-page">
 
     <div class="container">
 
-        <div class="page-header">
+        <div class="page-header chat-page-header">
 
-            <h1>Journal Chat</h1>
+            <div>
+                <p class="eyebrow">
+                    REFLECTION SPACE
+                </p>
+
+                <h1>
+                    Journal Chat
+                </h1>
+
+                <p class="chat-page-subtitle">
+                    Continue your thoughts in a private conversation with Gemini.
+                </p>
+            </div>
+
 
             <a href="/" class="back-link">
                 Back to Journal
@@ -24,78 +37,203 @@
         </div>
 
 
-        <form action="/chat/new" method="post">
+        <section class="new-conversation-section">
 
-            <button type="submit">
-                New Conversation
-            </button>
+            <div>
 
-        </form>
+                <h2>
+                    Start a new reflection
+                </h2>
 
-
-        {% if conversations %}
-
-            <div class="conversation-section-header">
-
-                <h2>Conversations</h2>
-
-                <button
-                    type="button"
-                    id="toggle-select-button"
-                    onclick="enableSelectionMode()"
-                >
-                    Select conversations
-                </button>
+                <p>
+                    Begin a fresh conversation whenever you want to explore
+                    a thought, feeling, or idea.
+                </p>
 
             </div>
 
 
-            <form
-                action="/chat/delete-selected"
-                method="post"
-                onsubmit="return confirmSelectedDelete();"
-            >
+            <form action="/chat/new" method="post">
 
-                <div class="conversation-list">
+                <button
+                    type="submit"
+                    class="new-conversation-button"
+                >
+                    + New Conversation
+                </button>
 
-                    {% for conversation in conversations %}
+            </form>
 
-                        <div class="conversation-item">
+        </section>
 
-                            <div class="conversation-header">
 
-                                <input
-                                    type="checkbox"
-                                    name="conversation_ids"
-                                    value="{{ conversation.id }}"
-                                    class="conversation-checkbox"
-                                >
+        {% if conversations %}
 
-                                <a
-                                    href="/chat/{{ conversation.id }}"
-                                    class="conversation-link"
-                                >
-                                    {{ conversation.title }}
-                                </a>
+            <section class="conversation-library">
+
+                <div class="conversation-section-header">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            YOUR CONVERSATIONS
+                        </p>
+
+                        <h2>
+                            Past reflections
+                        </h2>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="toggle-select-button"
+                        class="select-conversations-button"
+                        onclick="enableSelectionMode()"
+                    >
+                        Select
+                    </button>
+
+                </div>
+
+
+                <form
+                    action="/chat/delete-selected"
+                    method="post"
+                    onsubmit="return confirmSelectedDelete();"
+                >
+
+                    <div class="conversation-list">
+
+                        {% for conversation in conversations %}
+
+                            <article class="conversation-item">
+
+                                <div class="conversation-header">
+
+                                    <input
+                                        type="checkbox"
+                                        name="conversation_ids"
+                                        value="{{ conversation.id }}"
+                                        class="conversation-checkbox"
+                                    >
+
+
+                                    <div class="conversation-main">
+
+                                        <a
+                                            href="/chat/{{ conversation.id }}"
+                                            class="conversation-link"
+                                        >
+                                            {{ conversation.title }}
+                                        </a>
+
+                                        <span class="conversation-open-label">
+                                            Open conversation →
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+                                {% if conversation.summary %}
+
+                                    <div class="conversation-summary">
+
+                                        <div class="conversation-summary-heading">
+                                            ✦ Conversation Summary
+                                        </div>
+
+                                        <p>
+                                            {{ conversation.summary }}
+                                        </p>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </article>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div
+                        id="selection-actions"
+                        class="selection-actions"
+                    >
+
+                        <button
+                            type="submit"
+                            class="delete-selected-button"
+                        >
+                            Delete Selected
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            onclick="cancelSelectionMode()"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+        {% endif %}
+
+
+        {% if conversation_id %}
+
+            <section class="active-conversation-section">
+
+                <div class="active-conversation-heading">
+
+                    <div>
+
+                        <p class="eyebrow">
+                            CURRENT REFLECTION
+                        </p>
+
+                        <h2>
+                            Conversation
+                        </h2>
+
+                    </div>
+
+                    <span class="conversation-private-label">
+                        Private
+                    </span>
+
+                </div>
+
+
+                <div class="chat-box">
+
+                    {% for message in messages %}
+
+                        <div class="chat-message {{ message.role }}">
+
+                            <div class="message-author">
+
+                                {% if message.role == "user" %}
+                                    You
+                                {% else %}
+                                    Gemini
+                                {% endif %}
 
                             </div>
 
 
-                            {% if conversation.summary %}
-
-                                <div class="saved-analysis">
-
-                                    <strong>
-                                        Conversation Summary
-                                    </strong>
-
-                                    <p>
-                                        {{ conversation.summary }}
-                                    </p>
-
-                                </div>
-
-                            {% endif %}
+                            <p>{{ message.content }}</p>
 
                         </div>
 
@@ -104,92 +242,70 @@
                 </div>
 
 
-                <div
-                    id="selection-actions"
-                    class="selection-actions"
+                <form
+                    action="/chat/{{ conversation_id }}/send"
+                    method="post"
+                    class="chat-input-form"
+                    onsubmit="showSending(this)"
                 >
 
-                    <button
-                        type="submit"
-                        class="delete-selected-button"
-                    >
-                        Delete Selected
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="cancelSelectionMode()"
-                    >
-                        Cancel
-                    </button>
-
-                </div>
-
-            </form>
-
-        {% endif %}
+                    <textarea
+                        name="message"
+                        class="chat-input"
+                        placeholder="Write what you're thinking..."
+                        required
+                    ></textarea>
 
 
-        {% if conversation_id %}
+                    <div class="chat-form-actions">
 
-            <div class="chat-box">
+                        <span class="chat-input-hint">
+                            Your message stays within this conversation.
+                        </span>
 
-                {% for message in messages %}
 
-                    <div class="chat-message {{ message.role }}">
-
-                        <strong>
-                            {% if message.role == "user" %}
-                                You
-                            {% else %}
-                                Gemini
-                            {% endif %}
-                        </strong>
-
-                        <p>
-                            {{ message.content }}
-                        </p>
+                        <button
+                            type="submit"
+                            class="chat-send-button"
+                        >
+                            Send
+                        </button>
 
                     </div>
 
-                {% endfor %}
-
-            </div>
+                </form>
 
 
-            <form
-                action="/chat/{{ conversation_id }}/send"
-                method="post"
-                onsubmit="showSending(this)"
-            >
+                <form
+                    action="/chat/{{ conversation_id }}/summarize"
+                    method="post"
+                    class="end-conversation-form"
+                    onsubmit="showSummarizing(this)"
+                >
 
-                <textarea
-                    name="message"
-                    placeholder="Continue your journal conversation..."
-                    required
-                ></textarea>
+                    <div class="end-conversation-copy">
 
-                <button type="submit">
-                    Send
-                </button>
+                        <strong>
+                            Finished reflecting?
+                        </strong>
 
-            </form>
+                        <span>
+                            End this conversation and save a Gemini summary.
+                        </span>
 
-
-            <br>
+                    </div>
 
 
-            <form
-                action="/chat/{{ conversation_id }}/summarize"
-                method="post"
-                onsubmit="showSummarizing(this)"
-            >
+                    <button
+                        type="submit"
+                        class="end-conversation-button"
+                    >
+                        End Conversation
+                    </button>
 
-                <button type="submit">
-                    End Conversation
-                </button>
+                </form>
 
-            </form>
+            </section>
 
         {% endif %}
 
@@ -199,68 +315,104 @@
     <script>
 
         function showSending(form) {
-            const button = form.querySelector("button");
+
+            const button =
+                form.querySelector("button[type='submit']");
 
             button.disabled = true;
-            button.textContent = "Thinking...";
+
+            button.textContent =
+                "Thinking...";
+
         }
 
 
         function showSummarizing(form) {
-            const button = form.querySelector("button");
+
+            const button =
+                form.querySelector("button[type='submit']");
 
             button.disabled = true;
-            button.textContent = "Ending Conversation...";
+
+            button.textContent =
+                "Ending Conversation...";
+
         }
 
 
         function enableSelectionMode() {
 
             const checkboxes =
-                document.querySelectorAll(".conversation-checkbox");
+                document.querySelectorAll(
+                    ".conversation-checkbox"
+                );
 
             const actions =
-                document.getElementById("selection-actions");
+                document.getElementById(
+                    "selection-actions"
+                );
 
             const toggleButton =
-                document.getElementById("toggle-select-button");
+                document.getElementById(
+                    "toggle-select-button"
+                );
 
 
-            checkboxes.forEach((checkbox) => {
-                checkbox.style.display = "inline-block";
-            });
+            checkboxes.forEach(
+                (checkbox) => {
+
+                    checkbox.style.display =
+                        "inline-block";
+
+                }
+            );
 
 
-            actions.style.display = "flex";
+            actions.style.display =
+                "flex";
 
-            toggleButton.style.display = "none";
+            toggleButton.style.display =
+                "none";
+
         }
 
 
         function cancelSelectionMode() {
 
             const checkboxes =
-                document.querySelectorAll(".conversation-checkbox");
+                document.querySelectorAll(
+                    ".conversation-checkbox"
+                );
 
             const actions =
-                document.getElementById("selection-actions");
+                document.getElementById(
+                    "selection-actions"
+                );
 
             const toggleButton =
-                document.getElementById("toggle-select-button");
+                document.getElementById(
+                    "toggle-select-button"
+                );
 
 
-            checkboxes.forEach((checkbox) => {
+            checkboxes.forEach(
+                (checkbox) => {
 
-                checkbox.checked = false;
+                    checkbox.checked = false;
 
-                checkbox.style.display = "none";
+                    checkbox.style.display =
+                        "none";
 
-            });
+                }
+            );
 
 
-            actions.style.display = "none";
+            actions.style.display =
+                "none";
 
-            toggleButton.style.display = "inline-block";
+            toggleButton.style.display =
+                "inline-block";
+
         }
 
 
@@ -279,12 +431,14 @@
                 );
 
                 return false;
+
             }
 
 
             return confirm(
                 "Delete the selected conversations permanently?"
             );
+
         }
 
     </script>

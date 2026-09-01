@@ -4,18 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Vault</title>
+    <title>Vault | Gemini Journal</title>
 
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body>
+<body class="vault-page">
 
     <div class="container">
 
-        <div class="page-header">
+        <div class="page-header vault-page-header">
 
-            <h1>Vault</h1>
+            <div>
+                <p class="eyebrow">PRIVATE SPACE</p>
+
+                <h1>Vault</h1>
+
+                <p class="vault-page-subtitle">
+                    Your most sensitive journal entries stay separate from the main journal.
+                </p>
+            </div>
+
 
             <a href="/" class="back-link">
                 Back to Journal
@@ -23,137 +32,242 @@
 
         </div>
 
-        <form action="/vault-lock" method="post">
-            <button type="submit">
-                Lock Vault
-            </button>
-        </form>
 
-        <p class="subtitle">
-            Private journal entries.
-        </p>
+        <section class="vault-security-bar">
+
+            <div class="vault-security-copy">
+
+                <span class="vault-security-icon">
+                    ◇
+                </span>
+
+                <div>
+                    <strong>Vault is unlocked</strong>
+
+                    <p>
+                        Lock it when you are finished viewing your private entries.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <form action="/vault-lock" method="post">
+
+                <button
+                    type="submit"
+                    class="vault-lock-button"
+                >
+                    Lock Vault
+                </button>
+
+            </form>
+
+        </section>
 
 
         {% if entries %}
 
-            {% for entry in entries %}
+            <section class="vault-entries-section">
 
-                <div class="entry">
+                <div class="vault-section-heading">
 
-                    <div class="entry-header">
+                    <div>
+                        <p class="eyebrow">PROTECTED ENTRIES</p>
 
-                        <small>
-                            {{ entry.created_at }}
-                        </small>
+                        <h2>Private reflections</h2>
+                    </div>
 
-                        <div class="menu-wrapper">
 
-                            <button
-                                type="button"
-                                class="menu-button"
-                                onclick="toggleMenu('vault-menu-{{ entry.id }}')"
-                            >
-                                ⋮
-                            </button>
+                    <span class="vault-count">
+                        {{ entries | length }}
+
+                        {% if entries | length == 1 %}
+                            entry
+                        {% else %}
+                            entries
+                        {% endif %}
+                    </span>
+
+                </div>
+
+
+                <div class="vault-entry-list">
+
+                    {% for entry in entries %}
+
+                        <article class="entry vault-entry-card">
+
+                            <div class="entry-header">
+
+                                <small class="entry-date">
+                                    {{ entry.created_at | india_datetime }}
+                                </small>
+
+
+                                <div class="menu-wrapper">
+
+                                    <button
+                                        type="button"
+                                        class="menu-button"
+                                        aria-label="Entry options"
+                                        onclick="toggleMenu('vault-menu-{{ entry.id }}')"
+                                    >
+                                        ⋮
+                                    </button>
+
+
+                                    <div
+                                        id="vault-menu-{{ entry.id }}"
+                                        class="entry-menu"
+                                    >
+
+                                        <button
+                                            type="button"
+                                            onclick="toggleEdit('vault-edit-{{ entry.id }}')"
+                                        >
+                                            Edit
+                                        </button>
+
+
+                                        <form
+                                            action="/vault-reanalyze/{{ entry.id }}"
+                                            method="post"
+                                        >
+                                            <button
+                                                type="submit"
+                                                onclick="showAnalyzing(this)"
+                                            >
+                                                Re-analyze with Gemini
+                                            </button>
+                                        </form>
+
+
+                                        <form
+                                            action="/remove-from-vault/{{ entry.id }}"
+                                            method="post"
+                                        >
+                                            <button type="submit">
+                                                Remove from Vault
+                                            </button>
+                                        </form>
+
+
+                                        <form
+                                            action="/delete/{{ entry.id }}"
+                                            method="post"
+                                            onsubmit="return confirm('Delete this entry permanently?');"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="vault-delete-button"
+                                            >
+                                                Delete permanently
+                                            </button>
+                                        </form>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <p class="entry-text">{{ entry.content | trim }}</p>
 
 
                             <div
-                                id="vault-menu-{{ entry.id }}"
-                                class="entry-menu"
+                                id="vault-edit-{{ entry.id }}"
+                                class="edit-section vault-edit-section"
                             >
 
-                                <button
-                                    type="button"
-                                    onclick="toggleEdit('vault-edit-{{ entry.id }}')"
-                                >
-                                    Edit
-                                </button>
-
                                 <form
-                                    action="/vault-reanalyze/{{ entry.id }}"
+                                    action="/vault-edit/{{ entry.id }}"
                                     method="post"
                                 >
-                                    <button type="submit" 
-                                    onclick="showAnalyzing(this)"
-                                >
-                                        Re-analyze with Gemini
-                                    </button>
-                                </form>
 
-                                <form
-                                    action="/remove-from-vault/{{ entry.id }}"
-                                    method="post"
-                                >
-                                    <button type="submit">
-                                        Remove from Vault
-                                    </button>
-                                </form>
+                                    <label
+                                        for="vault-content-{{ entry.id }}"
+                                        class="vault-edit-label"
+                                    >
+                                        Edit reflection
+                                    </label>
 
-                                <form
-                                    action="/delete/{{ entry.id }}"
-                                    method="post"
-                                    onsubmit="return confirm('Delete this entry permanently?');"
-                                >
-                                    <button type="submit">
-                                        Delete
-                                    </button>
+
+                                    <textarea
+                                        id="vault-content-{{ entry.id }}"
+                                        name="content"
+                                        required
+                                    >{{ entry.content | trim }}</textarea>
+
+
+                                    <div class="vault-edit-actions">
+
+                                        <button type="submit">
+                                            Save Changes
+                                        </button>
+
+
+                                        <button
+                                            type="button"
+                                            class="secondary-button"
+                                            onclick="toggleEdit('vault-edit-{{ entry.id }}')"
+                                        >
+                                            Cancel
+                                        </button>
+
+                                    </div>
+
                                 </form>
 
                             </div>
 
-                        </div>
 
-                    </div>
+                            {% if entry.analysis %}
 
+                                <div class="vault-analysis">
 
-                    <p class="entry-text">
-                        {{ entry.content }}
-                    </p>
+                                    <div class="vault-analysis-heading">
+                                        ✦ Gemini Reflection
+                                    </div>
 
+                                    <p>{{ entry.analysis | trim }}</p>
 
-                    <div
-                        id="vault-edit-{{ entry.id }}"
-                        class="edit-section"
-                    >
+                                </div>
 
-                        <form
-                            action="/vault-edit/{{ entry.id }}"
-                            method="post"
-                        >
+                            {% endif %}
 
-                            <textarea
-                                name="content"
-                                required
-                            >{{ entry.content }}</textarea>
+                        </article>
 
-                            <button type="submit">
-                                Save Changes
-                            </button>
-
-                        </form>
-
-                    </div>
-
-
-                    {% if entry.analysis %}
-
-                        <div class="saved-analysis">
-
-                            <h3>Gemini Analysis</h3>
-
-                            <p>{{ entry.analysis }}</p>
-
-                        </div>
-
-                    {% endif %}
+                    {% endfor %}
 
                 </div>
 
-            {% endfor %}
+            </section>
+
 
         {% else %}
 
-            <p>No entries in the Vault.</p>
+            <section class="vault-empty-state">
+
+                <div class="vault-empty-icon">
+                    ◇
+                </div>
+
+                <h2>Your Vault is empty</h2>
+
+                <p>
+                    Sensitive entries you move to the Vault will appear here.
+                </p>
+
+                <a
+                    href="/"
+                    class="vault-return-button"
+                >
+                    Return to Journal
+                </a>
+
+            </section>
 
         {% endif %}
 
@@ -163,19 +277,65 @@
     <script>
 
         function toggleMenu(id) {
-            const menu = document.getElementById(id);
-            menu.classList.toggle("show-menu");
+
+            const selectedMenu =
+                document.getElementById(id);
+
+            document
+                .querySelectorAll(".entry-menu")
+                .forEach((menu) => {
+
+                    if (menu !== selectedMenu) {
+                        menu.classList.remove("show-menu");
+                    }
+
+                });
+
+            selectedMenu.classList.toggle("show-menu");
+
         }
 
+
         function toggleEdit(id) {
-            const editSection = document.getElementById(id);
+
+            const editSection =
+                document.getElementById(id);
+
             editSection.classList.toggle("show-edit");
+
         }
+
+
         function showAnalyzing(button) {
-        button.disabled = true;
-        button.textContent = "Analyzing...";
-        button.form.submit();
-        }   
+
+            button.disabled = true;
+
+            button.textContent =
+                "Analyzing...";
+
+        }
+
+
+        document.addEventListener(
+            "click",
+            function(event) {
+
+                if (
+                    !event.target.closest(".menu-wrapper")
+                ) {
+
+                    document
+                        .querySelectorAll(".entry-menu")
+                        .forEach((menu) => {
+
+                            menu.classList.remove("show-menu");
+
+                        });
+
+                }
+
+            }
+        );
 
     </script>
 

@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import timezone, timedelta
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
@@ -63,7 +64,20 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="templates")
+INDIA_TIMEZONE = timezone(timedelta(hours=5, minutes=30))
+
+def format_datetime_india(value):
+    if not value:
+        return ""
+
+    return value.astimezone(INDIA_TIMEZONE).strftime(
+        "%d %b %Y · %I:%M %p"
+    )
+
+
+templates.env.filters["india_datetime"] = format_datetime_india
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 class LoginRequest(BaseModel):
     token: str

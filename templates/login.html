@@ -9,21 +9,122 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
-<body>
+<body class="auth-page premium-auth-page">
 
-    <div class="container vault-login">
+    <div class="auth-wrapper">
 
-        <h1>Gemini Personal Journal</h1>
+        <div class="journal-login-shell">
 
-        <p class="subtitle">
-            Sign in to access your private journal.
-        </p>
+            <div class="journal-login-accent"></div>
 
-        <button id="google-login">
-            Continue with Google
-        </button>
+            <div class="journal-login-content">
 
-        <p id="login-error"></p>
+                <div class="journal-brand-row">
+
+                    <div class="journal-mark">
+                        G
+                    </div>
+
+                    <span class="journal-brand-name">
+                        Gemini Journal
+                    </span>
+
+                </div>
+
+
+                <div class="journal-login-heading">
+
+                    <p class="journal-kicker">
+                        YOUR PRIVATE REFLECTION SPACE
+                    </p>
+
+                    <h1 class="journal-login-title">
+                        A quiet place
+                        <span>for your thoughts.</span>
+                    </h1>
+
+                    <p class="journal-login-subtitle">
+                        Write freely, reflect privately, and let Gemini
+                        help you notice the thoughts worth remembering.
+                    </p>
+
+                </div>
+
+
+                <div class="journal-divider">
+
+                    <span></span>
+
+                    <div class="journal-divider-symbol">
+                        ✦
+                    </div>
+
+                    <span></span>
+
+                </div>
+
+
+                <button
+                    id="google-login"
+                    class="journal-google-button"
+                >
+
+                    <span class="google-letter">
+                        G
+                    </span>
+
+                    <span>
+                        Continue with Google
+                    </span>
+
+                </button>
+
+
+                <div class="privacy-note">
+
+                    <div class="privacy-icon">
+                        ♢
+                    </div>
+
+                    <div>
+                        <strong>
+                            Your journal stays yours.
+                        </strong>
+
+                        <p>
+                            Sign-in protects your private entries and
+                            keeps your journal separated from other users.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <p
+                    id="login-error"
+                    class="login-error"
+                ></p>
+
+            </div>
+
+
+            <div class="journal-login-footer">
+
+                <span>
+                    Private by design
+                </span>
+
+                <span class="footer-dot">
+                    •
+                </span>
+
+                <span>
+                    Powered by Gemini
+                </span>
+
+            </div>
+
+        </div>
 
     </div>
 
@@ -63,7 +164,22 @@
             .getElementById("google-login")
             .addEventListener("click", async () => {
 
+                const button =
+                    document.getElementById("google-login");
+
+                const errorBox =
+                    document.getElementById("login-error");
+
                 try {
+
+                    errorBox.textContent = "";
+
+                    button.disabled = true;
+
+                    button.querySelector(
+                        "span:last-child"
+                    ).textContent = "Opening Google...";
+
 
                     const result =
                         await signInWithPopup(auth, provider);
@@ -96,10 +212,15 @@
 
                     } else {
 
-                        document.getElementById(
-                            "login-error"
-                        ).textContent =
+                        errorBox.textContent =
                             "Login verification failed.";
+
+                        button.disabled = false;
+
+                        button.querySelector(
+                            "span:last-child"
+                        ).textContent =
+                            "Continue with Google";
 
                     }
 
@@ -107,10 +228,15 @@
 
                     console.error(error);
 
-                    document.getElementById(
-                        "login-error"
-                    ).textContent =
+                    errorBox.textContent =
                         "Google sign-in failed.";
+
+                    button.disabled = false;
+
+                    button.querySelector(
+                        "span:last-child"
+                    ).textContent =
+                        "Continue with Google";
 
                 }
 
