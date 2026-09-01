@@ -865,27 +865,28 @@ def send_chat_message(
         "user",
         message
     )
+
     messages_before_reply = get_messages(
-    uid,
-    conversation_id
+        uid,
+        conversation_id
     )
 
     user_messages = [
-    m for m in messages_before_reply
-    if m["role"] == "user"
+        m for m in messages_before_reply
+        if m["role"] == "user"
     ]
 
     if len(user_messages) == 1:
-      title = message.strip()
+        title = message.strip()
 
-    if len(title) > 35:
-        title = title[:35] + "..."
+        if len(title) > 35:
+            title = title[:35] + "..."
 
-    update_conversation_title(
-        uid,
-        conversation_id,
-        title
-    )
+        update_conversation_title(
+            uid,
+            conversation_id,
+            title
+        )
 
     messages = get_messages(
         uid,
@@ -900,21 +901,6 @@ def send_chat_message(
         "assistant",
         reply
     )
-
-    #updated_messages = get_messages(
-       # uid,
-       # conversation_id
-    #)
-
-    #summary = summarize_conversation(
-       # updated_messages
-    #)
-
-    #update_conversation_summary(
-       # uid,
-     #   conversation_id,
-     #   summary
-    #)
 
     return RedirectResponse(
         url=f"/chat/{conversation_id}",
