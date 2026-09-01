@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gemini Journal Chat</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+
+            <h1>Journal Chat</h1>
+
+            <a href="/" class="back-link">
+                Back to Journal
+            </a>
+
+        </div>
+
+
+        <form action="/chat/new" method="post">
+
+            <button type="submit">
+                New Conversation
+            </button>
+
+        </form>
+
+
+        {% if conversations %}
+
+            <h2>Conversations</h2>
+
+            <div class="conversation-list">
+
+                {% for conversation in conversations %}
+
+                    <div class="conversation-item">
+
+                        <a
+                            href="/chat/{{ conversation.id }}"
+                            class="conversation-link"
+                        >
+                            {{ conversation.title }}
+                        </a>
+
+                        {% if conversation.summary %}
+
+                            <div class="saved-analysis">
+                                <strong>Conversation Summary</strong>
+
+                                <p>
+                                    {{ conversation.summary }}
+                                </p>
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+
+        {% if conversation_id %}
+
+            <div class="chat-box">
+
+                {% for message in messages %}
+
+                    <div class="chat-message {{ message.role }}">
+
+                        <strong>
+                            {% if message.role == "user" %}
+                                You
+                            {% else %}
+                                Gemini
+                            {% endif %}
+                        </strong>
+
+                        <p>
+                            {{ message.content }}
+                        </p>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <form
+                action="/chat/{{ conversation_id }}/send"
+                method="post"
+                onsubmit="showSending(this)"
+            >
+
+                <textarea
+                    name="message"
+                    placeholder="Continue your journal conversation..."
+                    required
+                ></textarea>
+
+                <button type="submit">
+                    Send
+                </button>
+
+            </form>
+
+
+            <br>
+
+
+            <form
+                action="/chat/{{ conversation_id }}/summarize"
+                method="post"
+                onsubmit="showSummarizing(this)"
+            >
+
+                <button type="submit">
+                    End & Summarize Conversation
+                </button>
+
+            </form>
+
+        {% endif %}
+
+    </div>
+
+
+    <script>
+
+        function showSending(form) {
+            const button = form.querySelector("button");
+
+            button.disabled = true;
+            button.textContent = "Thinking...";
+        }
+
+
+        function showSummarizing(form) {
+            const button = form.querySelector("button");
+
+            button.disabled = true;
+            button.textContent = "Summarizing...";
+        }
+
+    </script>
+
+</body>
+</html>

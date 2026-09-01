@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vault</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+
+            <h1>Vault</h1>
+
+            <a href="/" class="back-link">
+                Back to Journal
+            </a>
+
+        </div>
+
+        <form action="/vault-lock" method="post">
+            <button type="submit">
+                Lock Vault
+            </button>
+        </form>
+
+        <p class="subtitle">
+            Private journal entries.
+        </p>
+
+
+        {% if entries %}
+
+            {% for entry in entries %}
+
+                <div class="entry">
+
+                    <div class="entry-header">
+
+                        <small>
+                            {{ entry.created_at }}
+                        </small>
+
+                        <div class="menu-wrapper">
+
+                            <button
+                                type="button"
+                                class="menu-button"
+                                onclick="toggleMenu('vault-menu-{{ entry.id }}')"
+                            >
+                                ⋮
+                            </button>
+
+
+                            <div
+                                id="vault-menu-{{ entry.id }}"
+                                class="entry-menu"
+                            >
+
+                                <button
+                                    type="button"
+                                    onclick="toggleEdit('vault-edit-{{ entry.id }}')"
+                                >
+                                    Edit
+                                </button>
+
+                                <form
+                                    action="/vault-reanalyze/{{ entry.id }}"
+                                    method="post"
+                                >
+                                    <button type="submit" 
+                                    onclick="showAnalyzing(this)"
+                                >
+                                        Re-analyze with Gemini
+                                    </button>
+                                </form>
+
+                                <form
+                                    action="/remove-from-vault/{{ entry.id }}"
+                                    method="post"
+                                >
+                                    <button type="submit">
+                                        Remove from Vault
+                                    </button>
+                                </form>
+
+                                <form
+                                    action="/delete/{{ entry.id }}"
+                                    method="post"
+                                    onsubmit="return confirm('Delete this entry permanently?');"
+                                >
+                                    <button type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <p class="entry-text">
+                        {{ entry.content }}
+                    </p>
+
+
+                    <div
+                        id="vault-edit-{{ entry.id }}"
+                        class="edit-section"
+                    >
+
+                        <form
+                            action="/vault-edit/{{ entry.id }}"
+                            method="post"
+                        >
+
+                            <textarea
+                                name="content"
+                                required
+                            >{{ entry.content }}</textarea>
+
+                            <button type="submit">
+                                Save Changes
+                            </button>
+
+                        </form>
+
+                    </div>
+
+
+                    {% if entry.analysis %}
+
+                        <div class="saved-analysis">
+
+                            <h3>Gemini Analysis</h3>
+
+                            <p>{{ entry.analysis }}</p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No entries in the Vault.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <script>
+
+        function toggleMenu(id) {
+            const menu = document.getElementById(id);
+            menu.classList.toggle("show-menu");
+        }
+
+        function toggleEdit(id) {
+            const editSection = document.getElementById(id);
+            editSection.classList.toggle("show-edit");
+        }
+        function showAnalyzing(button) {
+        button.disabled = true;
+        button.textContent = "Analyzing...";
+        button.form.submit();
+        }   
+
+    </script>
+
+</body>
+</html>

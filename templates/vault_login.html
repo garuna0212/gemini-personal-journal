@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Vault</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container vault-login">
+
+        <h1>Vault</h1>
+
+        <p class="subtitle">
+            Enter your PIN to unlock private entries.
+        </p>
+
+        {% if error %}
+            <div class="vault-error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/vault-unlock" method="post">
+
+            <input
+                type="password"
+                name="pin"
+                maxlength="8"
+                placeholder="Enter PIN"
+                required
+                class="pin-input"
+            >
+
+            <button type="submit">
+                Unlock Vault
+            </button>
+
+        </form>
+        <a href="/vault-reauth" class="back-link">
+            Forgot PIN?
+        </a>
+
+        <a href="/" class="back-link">
+            Back to Journal
+        </a>
+
+    </div>
+
+</body>
+</html>

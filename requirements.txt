@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+python-dotenv
+firebase-admin
+google-genai
+google-cloud-secret-manager
+itsdangerous

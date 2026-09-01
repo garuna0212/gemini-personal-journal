@@ -1,0 +1,263 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 70%;
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    padding: 28px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-top: 0;
+}
+
+h2 {
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+h3 {
+    margin-top: 0;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+textarea {
+    width: 100%;
+    height: 180px;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 16px;
+    resize: vertical;
+    border: 1px solid #bbb;
+    border-radius: 8px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+}
+
+.analysis-box {
+    margin-top: 18px;
+    padding: 18px;
+    background: #f1f4ff;
+    border-radius: 10px;
+}
+
+.guardian-box {
+    margin: 10px 0 15px;
+    padding: 15px;
+    background: #fff4d6;
+    border-radius: 8px;
+}
+
+.guardian-box p {
+    margin: 8px 0;
+}
+
+.guardian-box ul {
+    margin: 8px 0;
+    padding-left: 25px;
+}
+
+.guardian-box li {
+    margin: 4px 0;
+}
+
+.guardian-safe {
+    margin: 10px 0 15px;
+    padding: 15px;
+    background: #e9f8ee;
+    border-radius: 8px;
+}
+
+.protected-text {
+    margin-top: 8px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+}
+
+.gemini-result {
+    margin-top: 12px;
+}
+
+.gemini-result p {
+    white-space: pre-wrap;
+}
+
+.entry {
+    margin-top: 12px;
+    padding: 15px;
+    background: #f7f7f7;
+    border-radius: 8px;
+}
+
+.entry p {
+    margin-top: 0;
+}
+
+.entry small {
+    color: #777;
+}
+
+.saved-analysis {
+    margin-top: 12px;
+    padding: 15px;
+    background: #eef2ff;
+    border-radius: 8px;
+}
+
+.saved-analysis p {
+    white-space: pre-wrap;
+    margin-bottom: 0;
+}
+.edit-box {
+    width: 100%;
+    min-height: 100px;
+    height: auto;
+    margin-top: 0;
+}
+
+.entry-actions {
+    margin-top: 8px;
+}
+
+.delete-button {
+    margin-top: 8px;
+}
+
+.entry small {
+    display: block;
+    margin-top: 10px;
+}
+.entry {
+    position: relative;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-wrapper {
+    position: relative;
+}
+
+.menu-button {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.entry-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 35px;
+
+    min-width: 120px;
+
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+    z-index: 10;
+}
+
+.show-menu {
+    display: block;
+}
+
+.entry-menu button {
+    width: 100%;
+    padding: 10px 14px;
+
+    border: none;
+    background: transparent;
+
+    text-align: left;
+    cursor: pointer;
+}
+
+.entry-menu button:hover {
+    background: #f3f3f3;
+}
+
+.edit-section {
+    display: none;
+    margin-top: 12px;
+}
+
+.show-edit {
+    display: block;
+}
+
+.edit-section textarea {
+    height: 120px;
+    margin-top: 0;
+}
+.archive-link,
+.back-link {
+    display: inline-block;
+    margin-bottom: 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+.vault-login {
+    max-width: 450px;
+    text-align: center;
+}
+
+.pin-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px;
+    margin: 15px 0;
+    font-size: 18px;
+    text-align: center;
+    border: 1px solid #bbb;
+    border-radius: 8px;
+}
+
+.vault-error {
+    padding: 10px;
+    margin: 10px 0;
+    background: #ffe4e4;
+    border-radius: 8px;
+}

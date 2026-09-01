@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Vault PIN</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="container vault-login">
+
+    <h1>Create Vault PIN</h1>
+
+    <p class="subtitle">
+        Create a PIN to protect your private journal entries.
+    </p>
+
+    {% if error %}
+        <div class="vault-error">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <form action="/vault-setup" method="post">
+
+        <input
+            type="password"
+            name="pin"
+            class="pin-input"
+            placeholder="Create PIN"
+            inputmode="numeric"
+            required
+        >
+
+        <input
+            type="password"
+            name="confirm_pin"
+            class="pin-input"
+            placeholder="Confirm PIN"
+            inputmode="numeric"
+            required
+        >
+
+        <button type="submit">
+            Create Vault
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="/" class="back-link">
+        Back to Journal
+    </a>
+
+</div>
+
+</body>
+</html>

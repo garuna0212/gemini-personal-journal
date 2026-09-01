@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Archives</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+
+            <h1>Archives</h1>
+
+            <a href="/" class="back-link">
+                Back to Journal
+            </a>
+
+        </div>
+
+
+        {% if entries %}
+
+            {% for entry in entries %}
+
+                <div class="entry">
+
+                    <div class="entry-header">
+
+                        <small>
+                            {{ entry.created_at }}
+                        </small>
+
+
+                        <div class="menu-wrapper">
+
+                            <button
+                                type="button"
+                                class="menu-button"
+                                onclick="toggleMenu('archive-menu-{{ entry.id }}')"
+                            >
+                                ⋮
+                            </button>
+
+
+                            <div
+                                id="archive-menu-{{ entry.id }}"
+                                class="entry-menu"
+                            >
+
+                                <form
+                                    action="/restore/{{ entry.id }}"
+                                    method="post"
+                                >
+                                    <button type="submit">
+                                        Restore
+                                    </button>
+                                </form>
+
+
+                                <form
+                                    action="/delete/{{ entry.id }}"
+                                    method="post"
+                                    onsubmit="return confirm('Delete this entry permanently?');"
+                                >
+                                    <button type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <p class="entry-text">
+                        {{ entry.content }}
+                    </p>
+
+
+                    {% if entry.analysis %}
+
+                        <div class="saved-analysis">
+
+                            <h3>Gemini Analysis</h3>
+
+                            <p>{{ entry.analysis }}</p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No archived entries yet.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <script>
+
+        function toggleMenu(id) {
+            const menu = document.getElementById(id);
+            menu.classList.toggle("show-menu");
+        }
+
+    </script>
+
+</body>
+</html>

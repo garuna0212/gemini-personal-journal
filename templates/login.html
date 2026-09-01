@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sign In - Gemini Personal Journal</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container vault-login">
+
+        <h1>Gemini Personal Journal</h1>
+
+        <p class="subtitle">
+            Sign in to access your private journal.
+        </p>
+
+        <button id="google-login">
+            Continue with Google
+        </button>
+
+        <p id="login-error"></p>
+
+    </div>
+
+
+    <script type="module">
+
+        import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup
+        }
+        from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDInuEZ0kbHbdcMj0KHa7839jxVs1s6nrY",
+            authDomain: "gen-lang-client-0715483676.firebaseapp.com",
+            projectId: "gen-lang-client-0715483676",
+            storageBucket: "gen-lang-client-0715483676.firebasestorage.app",
+            messagingSenderId: "767164856928",
+            appId: "1:767164856928:web:94244abcce245c0f1da105",
+            measurementId: "G-Y4CRR20E2T"
+        };
+
+
+        const app = initializeApp(firebaseConfig);
+
+        const auth = getAuth(app);
+
+        const provider = new GoogleAuthProvider();
+
+
+        document
+            .getElementById("google-login")
+            .addEventListener("click", async () => {
+
+                try {
+
+                    const result =
+                        await signInWithPopup(auth, provider);
+
+                    const user = result.user;
+
+                    const idToken =
+                        await user.getIdToken();
+
+
+                    const response = await fetch(
+                        "/auth/login",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                token: idToken
+                            })
+                        }
+                    );
+
+
+                    if (response.ok) {
+
+                        window.location.href = "/";
+
+                    } else {
+
+                        document.getElementById(
+                            "login-error"
+                        ).textContent =
+                            "Login verification failed.";
+
+                    }
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    document.getElementById(
+                        "login-error"
+                    ).textContent =
+                        "Google sign-in failed.";
+
+                }
+
+            });
+
+    </script>
+
+</body>
+</html>

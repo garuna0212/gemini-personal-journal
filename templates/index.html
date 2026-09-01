@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gemini Personal Journal</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Gemini Personal Journal</h1>
+
+        <p class="subtitle">
+            Write what is on your mind.
+        </p>
+
+        <a href="/archive" class="archive-link">
+            Archives
+        </a>
+        <a href="/chat" class="archive-link">
+              Journal Chat
+        </a>
+        <a href="/vault" class="archive-link">
+            Vault
+        </a>
+        <form action="/logout" method="post">
+            <button type="submit">
+                Sign Out
+            </button>
+        </form>
+
+
+        <form action="/save" method="post">
+
+            <textarea
+                name="entry"
+                placeholder="Write your journal entry here..."
+                required
+            >{{ current_entry if current_entry else '' }}</textarea>
+
+            <div class="button-group">
+
+                <button type="submit">
+                    Save Entry
+                </button>
+
+                <button
+                   type="submit"
+                   formaction="/analyze"
+                   onclick="showAnalyzing(this)"
+                >
+                     Analyze with Gemini
+                </button>
+
+            </div>
+
+        </form>
+
+
+        {% if analysis %}
+
+            <div class="analysis-box">
+
+                <h2>Gemini Analysis</h2>
+
+                {% if detected %}
+
+                    <div class="guardian-box">
+
+                        <h3>🛡️ AI Guardian</h3>
+
+                        <p>
+                            Sensitive information was detected and masked before being sent to Gemini.
+                        </p>
+
+                        <p>
+                            <strong>Detected:</strong>
+                        </p>
+
+                        <ul>
+                            {% for item in detected %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        <p>
+                            <strong>Protected version sent to Gemini:</strong>
+                        </p>
+
+                        <div class="protected-text">
+                            {{ protected_text }}
+                        </div>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="guardian-safe">
+
+                        <h3>🛡️ AI Guardian</h3>
+
+                        <p>
+                            No sensitive information was detected.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+
+                <div class="gemini-result">
+
+                    <h3>AI Reflection</h3>
+
+                    <p>{{ analysis }}</p>
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+        <h2>Previous Entries</h2>
+
+
+        {% if entries %}
+
+            {% for entry in entries %}
+
+                <div class="entry">
+
+                    <div class="entry-header">
+
+                        <small>
+                            {{ entry.created_at }}
+                        </small>
+
+
+                        <div class="menu-wrapper">
+
+                            <button
+                                type="button"
+                                class="menu-button"
+                                onclick="toggleMenu('menu-{{ entry.id }}')"
+                            >
+                                ⋮
+                            </button>
+
+
+                            <div
+                                id="menu-{{ entry.id }}"
+                                class="entry-menu"
+                            >
+
+                                <button
+                                    type="button"
+                                    onclick="toggleEdit('edit-{{ entry.id }}')"
+                                >
+                                    Edit
+                                </button>
+                                <form
+                                    action="/reanalyze/{{ entry.id }}"
+                                    method="post"
+                                >
+                                    <button
+                                       type="submit"
+                                        onclick="showAnalyzing(this)"
+                                    >
+                                          Re-analyze with Gemini
+                                    </button>
+                                </form>
+
+                                <form
+                                    action="/archive/{{ entry.id }}"
+                                    method="post"
+                                >
+                                
+                                    <button type="submit">
+                                        Archive
+                                    </button>
+                                </form>
+                                
+
+                                <form
+                                   action="/move-to-vault/{{ entry.id }}"
+                                    method="post"
+                                >
+                                    <button type="submit">
+                                        Move to Vault
+                                    </button>
+                                </form>
+
+
+                                <form
+                                    action="/delete/{{ entry.id }}"
+                                    method="post"
+                                    onsubmit="return confirm('Delete this journal entry?');"
+                                >
+                                    <button type="submit">
+                                        Delete
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <p class="entry-text">
+                       {{ entry.content }}
+                    </p>
+
+
+                    <div
+                        id="edit-{{ entry.id }}"
+                        class="edit-section"
+                    >
+
+                        <form
+                            action="/edit/{{ entry.id }}"
+                            method="post"
+                        >
+
+                            <textarea
+                                name="content"
+                                required
+                            >{{ entry.content }}</textarea>
+
+                            <button type="submit">
+                                Save Changes
+                            </button>
+
+                        </form>
+
+                    </div>
+
+
+                    {% if entry.analysis %}
+
+                        <div class="saved-analysis">
+
+                            <h3>Gemini Analysis</h3>
+
+                            <p>{{ entry.analysis }}</p>
+
+                        </div>
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No journal entries yet.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <script>
+
+        function toggleMenu(id) {
+            const menu = document.getElementById(id);
+            menu.classList.toggle("show-menu");
+        }
+
+
+        function toggleEdit(id) {
+            const editSection = document.getElementById(id);
+            editSection.classList.toggle("show-edit");
+        }
+        function showAnalyzing(button) {
+            button.disabled = true;
+            button.textContent = "Analyzing...";
+            button.form.submit();
+        }
+
+    </script>
+
+</body>
+</html>
