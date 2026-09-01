@@ -1,15 +1,23 @@
 import os
 from pathlib import Path
+
+import google.auth
 from dotenv import load_dotenv
 from google.cloud import secretmanager
+
 
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
+
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
 if not PROJECT_ID:
-    raise ValueError("GOOGLE_CLOUD_PROJECT is not configured")
+    _, PROJECT_ID = google.auth.default()
+
+if not PROJECT_ID:
+    raise ValueError("Google Cloud project ID could not be determined")
+
 
 GEMINI_SECRET_NAME = "GEMINI_API_KEY"
 
