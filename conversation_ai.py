@@ -53,11 +53,10 @@ ASSISTANT:
         return response.text
 
     except ClientError as e:
+        print("GEMINI CLIENT ERROR:", e)
+
         if e.code == 429:
-            return (
-                "Gemini is temporarily rate-limited. "
-                "Please wait about a minute and try again."
-            )
+            return "Gemini is temporarily rate-limited. Please wait about a minute and try again."
 
         raise
 
