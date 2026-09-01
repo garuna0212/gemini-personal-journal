@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from firebase_auth import verify_firebase_token
 from starlette.middleware.sessions import SessionMiddleware
 from secret_manager import get_session_secret
+from typing import List
 from firestore_db import (
     add_entry as firestore_add_entry,
     get_entries as firestore_get_entries,
@@ -34,7 +35,8 @@ from conversation_db import (
     get_messages,
     get_conversations,
     update_conversation_summary,
-    update_conversation_title
+    update_conversation_title,
+    delete_conversation
     )
 
 from conversation_ai import (
@@ -238,6 +240,31 @@ def edit_entry(
 
     return RedirectResponse(
         url="/",
+        status_code=303
+    )
+@app.post("/chat/delete-selected")
+def delete_selected_conversations(
+    request: Request,
+    conversation_ids: List[str] = Form(...)
+):
+    user = request.session.get("user")
+
+    if not user:
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    uid = user["uid"]
+
+    for conversation_id in conversation_ids:
+        delete_conversation(
+            uid,
+            conversation_id
+        )
+
+    return RedirectResponse(
+        url="/chat",
         status_code=303
     )
 @app.post("/archive/{entry_id}")
@@ -905,6 +932,7 @@ def send_chat_message(
         url=f"/chat/{conversation_id}",
         status_code=303
     )
+
 if __name__ == "__main__":
     uvicorn.run(
         "app:app",

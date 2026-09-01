@@ -35,38 +35,97 @@
 
         {% if conversations %}
 
-            <h2>Conversations</h2>
+            <div class="conversation-section-header">
 
-            <div class="conversation-list">
+                <h2>Conversations</h2>
 
-                {% for conversation in conversations %}
-
-                    <div class="conversation-item">
-
-                        <a
-                            href="/chat/{{ conversation.id }}"
-                            class="conversation-link"
-                        >
-                            {{ conversation.title }}
-                        </a>
-
-                        {% if conversation.summary %}
-
-                            <div class="saved-analysis">
-                                <strong>Conversation Summary</strong>
-
-                                <p>
-                                    {{ conversation.summary }}
-                                </p>
-                            </div>
-
-                        {% endif %}
-
-                    </div>
-
-                {% endfor %}
+                <button
+                    type="button"
+                    id="toggle-select-button"
+                    onclick="enableSelectionMode()"
+                >
+                    Select conversations
+                </button>
 
             </div>
+
+
+            <form
+                action="/chat/delete-selected"
+                method="post"
+                onsubmit="return confirmSelectedDelete();"
+            >
+
+                <div class="conversation-list">
+
+                    {% for conversation in conversations %}
+
+                        <div class="conversation-item">
+
+                            <div class="conversation-header">
+
+                                <input
+                                    type="checkbox"
+                                    name="conversation_ids"
+                                    value="{{ conversation.id }}"
+                                    class="conversation-checkbox"
+                                >
+
+                                <a
+                                    href="/chat/{{ conversation.id }}"
+                                    class="conversation-link"
+                                >
+                                    {{ conversation.title }}
+                                </a>
+
+                            </div>
+
+
+                            {% if conversation.summary %}
+
+                                <div class="saved-analysis">
+
+                                    <strong>
+                                        Conversation Summary
+                                    </strong>
+
+                                    <p>
+                                        {{ conversation.summary }}
+                                    </p>
+
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <div
+                    id="selection-actions"
+                    class="selection-actions"
+                >
+
+                    <button
+                        type="submit"
+                        class="delete-selected-button"
+                    >
+                        Delete Selected
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="cancelSelectionMode()"
+                    >
+                        Cancel
+                    </button>
+
+                </div>
+
+            </form>
 
         {% endif %}
 
@@ -152,6 +211,80 @@
 
             button.disabled = true;
             button.textContent = "Ending Conversation...";
+        }
+
+
+        function enableSelectionMode() {
+
+            const checkboxes =
+                document.querySelectorAll(".conversation-checkbox");
+
+            const actions =
+                document.getElementById("selection-actions");
+
+            const toggleButton =
+                document.getElementById("toggle-select-button");
+
+
+            checkboxes.forEach((checkbox) => {
+                checkbox.style.display = "inline-block";
+            });
+
+
+            actions.style.display = "flex";
+
+            toggleButton.style.display = "none";
+        }
+
+
+        function cancelSelectionMode() {
+
+            const checkboxes =
+                document.querySelectorAll(".conversation-checkbox");
+
+            const actions =
+                document.getElementById("selection-actions");
+
+            const toggleButton =
+                document.getElementById("toggle-select-button");
+
+
+            checkboxes.forEach((checkbox) => {
+
+                checkbox.checked = false;
+
+                checkbox.style.display = "none";
+
+            });
+
+
+            actions.style.display = "none";
+
+            toggleButton.style.display = "inline-block";
+        }
+
+
+        function confirmSelectedDelete() {
+
+            const selected =
+                document.querySelectorAll(
+                    ".conversation-checkbox:checked"
+                );
+
+
+            if (selected.length === 0) {
+
+                alert(
+                    "Select at least one conversation."
+                );
+
+                return false;
+            }
+
+
+            return confirm(
+                "Delete the selected conversations permanently?"
+            );
         }
 
     </script>

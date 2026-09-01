@@ -261,3 +261,66 @@ button {
     background: #ffe4e4;
     border-radius: 8px;
 }
+.conversation-item {
+    margin-bottom: 18px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+}
+
+.conversation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.conversation-link {
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.delete-conversation-button {
+    padding: 7px 12px;
+    font-size: 14px;
+}
+.conversation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.conversation-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.delete-selected-button {
+    margin-top: 15px;
+}
+.conversation-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.conversation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.conversation-checkbox {
+    display: none;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.selection-actions {
+    display: none;
+    gap: 10px;
+    margin-top: 15px;
+}

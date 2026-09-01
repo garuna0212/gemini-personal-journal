@@ -105,3 +105,19 @@ def update_conversation_title(uid, conversation_id, title):
             "title": title
         })
     )
+def delete_conversation(uid, conversation_id):
+    conversation_ref = (
+        db.collection("users")
+        .document(uid)
+        .collection("conversations")
+        .document(conversation_id)
+    )
+
+    # Delete all messages first
+    messages = conversation_ref.collection("messages").stream()
+
+    for message in messages:
+        message.reference.delete()
+
+    # Delete the conversation document
+    conversation_ref.delete()
