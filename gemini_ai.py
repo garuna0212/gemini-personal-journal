@@ -44,11 +44,7 @@ Journal entry:
         contents=prompt
     )
 
-    print(
-        "Gemini finished in",
-        round(time.time() - start, 2),
-        "seconds"
-    )
+    
 
     return {
         "analysis": response.text,

@@ -294,7 +294,6 @@ def archive_page(request: Request):
 
     entries = firestore_get_archived_entries(uid)
 
-    print("Archived entries:", entries)
 
     return templates.TemplateResponse(
         request=request,

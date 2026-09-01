@@ -50,8 +50,7 @@ ASSISTANT:
             contents=prompt
         )
 
-        print("Gemini chat response:", response.text)
-
+       
         return response.text
 
     except ClientError as e:
@@ -103,8 +102,6 @@ Conversation:
             model="gemini-3.6-flash",
             contents=prompt
         )
-
-        print("Gemini summary response:", response.text)
 
         return response.text
 
