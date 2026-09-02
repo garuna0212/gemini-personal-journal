@@ -1,33 +1,41 @@
 # Gemini Personal Journal
 
-A secure AI-powered personal journaling application built with **FastAPI, Gemini, Firebase Authentication, Cloud Firestore, Google Cloud Secret Manager, and Cloud Run**.
+A privacy-focused AI journaling application built with **FastAPI, Google Gemini, Firebase Authentication, Cloud Firestore, Google Cloud Secret Manager, and Google Cloud Run**.
 
-The project was designed around privacy, per-user isolation, secure secret handling, and responsible AI usage.
+Gemini Personal Journal lets users write private journal entries, receive AI-generated reflections, continue thoughts through multi-turn chat, and protect sensitive entries in a PIN-protected Vault.
 
-## Live Application
+The project was built with a security-first approach: authenticated sessions, per-user data isolation, server-side Firebase token verification, CSRF protection for form actions, Secret Manager for production secrets, and sensitive-data masking before content is sent to Gemini.
 
-Deployed on Google Cloud Run:
+---
 
+## Live Demo
+
+**Application:**  
 https://gemini-personal-journal-767164856928.asia-south1.run.app
 
-## Features
+**GitHub:**  
+https://github.com/garuna0212/gemini-personal-journal
 
-### AI Journal Analysis
+---
 
-Users can write journal entries and analyze them with Gemini.
+## What the App Does
 
-The AI provides:
+### Journal + Gemini Reflection
+
+Users can write journal entries and optionally analyze them with Gemini.
+
+Gemini returns a structured reflection containing:
 
 - Mood
 - Summary
 - Reflection
 - Follow-up questions
 
-Journal entries and AI analysis are stored persistently in Cloud Firestore.
+Entries and their AI-generated analysis are stored in Cloud Firestore under the authenticated user's UID.
 
 ### AI Guardian
 
-Before journal content is sent to Gemini, the AI Guardian checks for sensitive information and masks supported data types.
+Before journal content is sent to Gemini, the **AI Guardian** checks for supported sensitive information and masks it.
 
 Examples include:
 
@@ -38,86 +46,131 @@ Examples include:
 
 Example:
 
+```text
 Original:
 My email is example@gmail.com
 
 Sent to Gemini:
 My email is [EMAIL]
+```
 
-The original journal entry remains stored for the authenticated user while Gemini receives the protected version.
+The original entry remains associated with the authenticated user, while Gemini receives the protected version.
 
-### Journal Chat
+### Multi-Turn Journal Chat
 
-The application includes a multi-turn Gemini chat experience for journaling and brainstorming.
+The application includes persistent Gemini chat for reflection and brainstorming.
 
 Features include:
 
-- Persistent conversations
+- Multi-turn Gemini conversations
 - Previous messages used as context
+- Persistent Firestore-backed history
 - Automatic conversation titles
 - Conversation summaries
 - Select-and-delete conversations
-- Firestore-backed conversation history
 
-When a user ends a conversation, Gemini automatically generates a structured summary containing:
+When the user ends a conversation, Gemini generates a structured summary containing:
 
 - Summary
 - Key themes
 - Important takeaways
 - Possible next steps
 
-The generated summary is saved in Firestore.
+The summary is saved with the conversation in Firestore.
 
 ### Private Vault
 
-Sensitive journal entries can be moved into a private Vault.
+Users can move sensitive journal entries into a separate **Private Vault**.
 
 Vault features include:
 
-- Per-user Vault PIN
+- Per-user PIN
 - PBKDF2-based PIN hashing
 - Random salt generation
-- Session-specific Vault unlocking
+- Session-specific unlock state
 - Manual Vault locking
 - Edit and re-analyze Vault entries
-- Remove entries from Vault
-- Delete Vault entries
+- Remove entries from the Vault
+- Protected backend Vault actions
+- Secure PIN reset flow
 
-The Vault PIN itself is never stored in plaintext.
+The Vault PIN is never stored in plaintext.
+
+> **Important:** The Vault is an application-level PIN-protected privacy layer. It does not provide separate client-side encryption of journal content.
 
 ### Secure Vault PIN Recovery
 
-If a user forgets the Vault PIN, they cannot simply reset it directly.
+A forgotten Vault PIN cannot be reset directly.
 
-The recovery flow requires:
+The reset flow requires:
 
 1. An authenticated journal session
 2. Fresh Google re-authentication
 3. Backend verification of the Firebase ID token
-4. Matching Firebase UID
+4. Verification that the re-authenticated Firebase UID matches the active journal session
 5. Temporary reset authorization
 6. Creation of a new Vault PIN
 
-The reset authorization expires after a short period and is removed after use.
+The reset authorization expires after a short period and is invalidated after use.
 
 ### Archive
 
-Journal entries can be archived and restored without deleting them.
+Journal entries can be archived and later restored without deleting them.
+
+---
+
+## Security Features
+
+The project includes:
+
+- Firebase Authentication with Google Sign-In
+- Server-side Firebase ID token verification
+- Backend-derived user identity
+- Per-user Firestore paths
+- Firestore Security Rules
+- Cloud Secret Manager integration
+- HTTPS-only production session cookies
+- Signed application sessions
+- CSRF protection for form-based state-changing actions
+- AI Guardian sensitive-data masking
+- PBKDF2 Vault PIN hashing
+- Vault backend authorization checks
+- Fresh Google re-authentication for Vault PIN recovery
+- Graceful Gemini API error handling
+- Sanitized Markdown rendering for Gemini output
+- Minimal exposure of sensitive error details to users
+
+---
 
 ## Authentication
 
 The application uses **Firebase Authentication with Google Sign-In**.
 
-The frontend obtains a Firebase ID token, which is verified by the FastAPI backend using the Firebase Admin SDK.
+```text
+Browser
+   |
+   | Google Sign-In
+   v
+Firebase Authentication
+   |
+   | Firebase ID token
+   v
+FastAPI backend
+   |
+   | Verify token with Firebase Admin SDK
+   v
+Signed application session
+```
 
-The backend derives the authenticated user's UID from the verified session instead of trusting a UID supplied by the browser.
+The backend derives the user's UID from the verified Firebase session rather than trusting a UID supplied by the browser.
+
+---
 
 ## Per-User Data Isolation
 
-Firestore data is organized by Firebase UID.
+Firestore data is organized under each Firebase UID.
 
-Example structure:
-
+```text
 users/
   {uid}/
     entries/
@@ -127,146 +180,150 @@ users/
       {conversationId}/
         messages/
           {messageId}
+```
 
-This ensures each user's journal entries, Vault data, archives, conversations, and summaries remain isolated.
+This keeps journal entries, archived entries, Vault entries, conversations, messages, and summaries scoped to the authenticated user.
 
-The application was manually tested using two separate Google accounts to verify that one user cannot view another user's journal data.
+The application was manually tested with separate Google accounts to verify cross-user isolation.
+
+---
 
 ## Firestore Security Rules
 
-Firestore rules restrict access to the authenticated user's own document hierarchy.
-
-Example:
-
+```rules
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
     match /users/{userId}/{document=**} {
-
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+      allow read, write:
+        if request.auth != null
+        && request.auth.uid == userId;
     }
   }
 }
+```
 
-The backend additionally performs UID-based authorization because Firebase Admin SDK operations bypass Firestore Security Rules.
+The backend also performs UID-based authorization because Firebase Admin SDK operations are trusted server operations and are not governed by client Firestore Security Rules.
+
+---
 
 ## Secret Management
 
-Sensitive production secrets are stored in **Google Cloud Secret Manager**.
+Production secrets are stored in **Google Cloud Secret Manager**.
 
-Secrets include:
-
+```text
 GEMINI_API_KEY
 SESSION_SECRET
+```
 
-The Cloud Run runtime service account has only the permissions required to access the necessary secrets and Firestore data.
+The Cloud Run runtime service account is granted only the permissions needed to access the required secrets and Firestore data.
 
-Local development uses environment variables from `.env`.
+Production secrets are not hardcoded in the repository.
+
+For local development, the application can use local environment variables or Secret Manager depending on configuration.
 
 The `.env` file is excluded from Git and Docker builds.
 
-## Session Security
+---
 
-Application sessions use a high-entropy secret.
+## CSRF Protection
 
-Local development:
+State-changing HTML form actions use per-session CSRF tokens.
 
-ENVIRONMENT=development
+Protected actions include:
 
-Production:
+- Save
+- Analyze
+- Edit
+- Delete
+- Archive / Restore
+- Move to / Remove from Vault
+- Vault setup / unlock / reset / lock
+- Vault edit / re-analyze
+- Chat creation
+- Chat sending
+- Conversation summarization
+- Conversation deletion
+- Logout
 
-ENVIRONMENT=production
+Firebase JSON authentication flows use verified Firebase ID tokens instead of normal HTML form submission.
 
-In production, session cookies are configured for HTTPS.
+---
 
-Vault unlock state is stored per session instead of using a global server variable.
+## Safe Gemini Output Rendering
 
-## Security Principles
+Gemini responses are stored as Markdown text.
 
-The project follows a security-first development approach.
+Before rendering in the UI, Markdown is:
 
-Key principles include:
+1. Converted to HTML
+2. Sanitized using `bleach`
+3. Rendered only with an allowlist of safe HTML tags
 
-- Threat modeling before implementation
-- No hardcoded production secrets
-- Firebase Authentication
-- Server-side token verification
-- Per-user Firestore isolation
-- Least-privilege IAM
-- Sensitive-data minimization before AI processing
-- Hashed Vault PINs
-- Secure session management
-- Safe error handling
-- Minimal sensitive logging
-- HTTPS deployment
-- Secret Manager integration
-- Authentication before sensitive account actions
+This avoids directly trusting model-generated HTML.
+
+---
 
 ## Architecture
 
+```text
 User Browser
     |
     v
-Firebase Google Authentication
+Firebase Authentication
     |
     v
-FastAPI Backend
+FastAPI Backend on Cloud Run
     |
-    +------> AI Guardian
-    |            |
-    |            v
-    |        Gemini API
+    +----> AI Guardian ----> Gemini API
     |
-    +------> Cloud Firestore
+    +----> Cloud Firestore
     |
-    +------> Secret Manager
-    |
-    v
-Google Cloud Run
+    +----> Google Cloud Secret Manager
+```
+
+---
 
 ## Technology Stack
 
 ### Backend
-
 - Python
 - FastAPI
 - Uvicorn
 - Jinja2
 
 ### AI
-
 - Google Gemini API
 - Google Gen AI Python SDK
 
 ### Authentication
-
 - Firebase Authentication
 - Google Sign-In
 - Firebase Admin SDK
 
 ### Database
-
 - Cloud Firestore
 
 ### Security
-
 - Google Cloud Secret Manager
-- PBKDF2 PIN hashing
 - Firebase ID token verification
-- Signed application sessions
+- Signed sessions
+- CSRF tokens
+- PBKDF2 Vault PIN hashing
+- Sanitized Markdown rendering
 
 ### Deployment
-
 - Docker
 - Google Cloud Run
 - Cloud Build
 - Artifact Registry
 
+---
+
 ## Project Structure
 
+```text
 gemini-personal-journal/
 │
 ├── app.py
@@ -278,6 +335,7 @@ gemini-personal-journal/
 ├── conversation_db.py
 ├── vault_security.py
 ├── secret_manager.py
+│
 ├── requirements.txt
 ├── Dockerfile
 ├── .dockerignore
@@ -296,115 +354,198 @@ gemini-personal-journal/
 │
 └── static/
     └── style.css
+```
+
+---
 
 ## Local Setup
 
-Clone the repository:
+### 1. Clone the repository
 
+```bash
 git clone https://github.com/garuna0212/gemini-personal-journal.git
 cd gemini-personal-journal
+```
 
-Install dependencies:
+### 2. Install dependencies
 
+```bash
 python -m pip install -r requirements.txt
+```
 
-Create a local `.env` file:
+### 3. Configure the project
 
-GEMINI_API_KEY=your_gemini_api_key
-SESSION_SECRET=your_long_random_session_secret
+Create a local `.env` file for non-production configuration as needed.
+
+```env
 GOOGLE_CLOUD_PROJECT=your_google_cloud_project_id
 ENVIRONMENT=development
+```
+
+If you choose to use local secrets during development:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+SESSION_SECRET=your_long_random_session_secret
+```
 
 Do not commit `.env`.
 
-Authenticate local Google Application Default Credentials if using Firebase Admin and Firestore locally:
+### 4. Authenticate Google Application Default Credentials
 
+```bash
 gcloud auth application-default login
+```
 
-Set the quota project:
+Optionally set the quota project:
 
+```bash
 gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+```
 
-Run the application:
+### 5. Run the application
 
+```bash
 python app.py
+```
 
-Then open:
+Open:
 
+```text
 http://127.0.0.1:8000
+```
+
+---
 
 ## Docker
 
-Build the container:
-
+```bash
 docker build -t gemini-personal-journal .
-
-Run locally:
-
 docker run -p 8080:8080 gemini-personal-journal
+```
+
+---
 
 ## Cloud Run Deployment
 
-Example deployment:
-
+```bash
 gcloud run deploy gemini-personal-journal \
   --source . \
+  --project YOUR_PROJECT_ID \
   --region asia-south1 \
   --service-account YOUR_SERVICE_ACCOUNT \
   --set-env-vars ENVIRONMENT=production,GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID \
   --allow-unauthenticated
+```
+
+The Cloud Run service is publicly reachable so users can reach the login page, but application data remains protected behind Firebase authentication and backend authorization.
 
 Production secrets are retrieved from Google Cloud Secret Manager.
+
+---
 
 ## Original Enhancements
 
 ### AI Guardian
+Masks supported sensitive information before journal content is sent to Gemini.
 
-Protects supported sensitive information before journal content is sent to Gemini.
-
-### Secure Vault
-
-Provides PIN-protected storage for private journal entries with hashed PINs and Google re-authentication for recovery.
+### Private Vault
+Provides a separate PIN-protected area for sensitive entries, with hashed PINs, session locking, backend access checks, and Google re-authentication for PIN recovery.
 
 ### Conversation Summaries
-
 Multi-turn Gemini conversations can be ended and automatically summarized into structured insights saved in Firestore.
+
+### Security Hardening
+Additional improvements include:
+
+- CSRF protection
+- Backend Vault authorization
+- Safe Markdown sanitization
+- Secure session configuration
+- Gemini failure handling
+
+---
 
 ## Security Testing
 
-The application was tested for:
+The application has been manually tested for:
 
 - Authentication enforcement
 - Cross-user journal isolation
 - Cross-user conversation isolation
+- Journal persistence
+- Archive / restore flow
+- Vault PIN creation
+- Incorrect Vault PIN rejection
 - Vault session locking
-- Incorrect PIN rejection
+- Vault backend action protection
 - Vault PIN reset through Google re-authentication
 - Firestore persistence
-- Secret Manager access from Cloud Run
+- Secret Manager access
 - Production Firebase Google Sign-In
 - Multi-turn Gemini context
 - Persistent Gemini conversation summaries
+- CSRF-protected form actions
+- Cloud Run production deployment
+
+---
+
+## Demo / Submission
+
+This project was built as part of a Google Cloud / Gemini challenge submission.
+
+Required social hashtag:
+
+```text
+#AccelerateAIwithCloudRun
+```
+
+Live application:
+
+https://gemini-personal-journal-767164856928.asia-south1.run.app
+
+---
 
 ## Screenshots
 
-Screenshots can be added here for:
+Recommended screenshots:
 
-- Journal dashboard
-- Gemini analysis
-- AI Guardian
-- Journal Chat
-- Conversation summary
-- Vault
-- Google re-authentication
-- Firebase Authentication
-- Firestore data model
-- Firestore Security Rules
-- Secret Manager
-- Cloud Run deployment
+1. Google Sign-In
+2. Journal dashboard
+3. Gemini journal analysis
+4. AI Guardian masking
+5. Private Vault
+6. Journal Chat
+7. Conversation summary
+8. Firebase Authentication
+9. Firestore UID-based data structure
+10. Firestore Security Rules
+11. Secret Manager secret names
+12. Cloud Run deployment
+
+> Never publish API keys, session secrets, Firebase tokens, or Secret Manager secret values in screenshots.
+
+---
+
+## Limitations
+
+This is a challenge prototype rather than a production-ready mental-health or secure-notes platform.
+
+Current limitations include:
+
+- The Vault is PIN-protected but does not provide client-side content encryption
+- No dedicated rate-limiting layer
+- No comprehensive automated security test suite
+- No formal penetration test
+- No abuse-detection system
+- No formal privacy/legal compliance review
+
+---
 
 ## Disclaimer
 
-This project is a prototype built for learning and challenge demonstration purposes.
+Gemini Personal Journal is an educational and challenge demonstration project.
 
-It should undergo additional penetration testing, monitoring, rate limiting, abuse protection, security review, and privacy/legal review before handling sensitive production data at scale.
+AI-generated reflections should not be treated as medical, psychological, legal, or other professional advice.
+
+The application should undergo additional security testing, monitoring, abuse protection, privacy review, and operational hardening before being used for highly sensitive real-world data.
