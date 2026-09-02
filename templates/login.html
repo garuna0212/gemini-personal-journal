@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Sign In - Gemini Personal Journal</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Sign In - Gemini Personal Journal
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body class="auth-page premium-auth-page">
 
@@ -16,6 +27,7 @@
         <div class="journal-login-shell">
 
             <div class="journal-login-accent"></div>
+
 
             <div class="journal-login-content">
 
@@ -40,7 +52,9 @@
 
                     <h1 class="journal-login-title">
                         A quiet place
-                        <span>for your thoughts.</span>
+                        <span>
+                            for your thoughts.
+                        </span>
                     </h1>
 
                     <p class="journal-login-subtitle">
@@ -66,6 +80,7 @@
 
                 <button
                     id="google-login"
+                    type="button"
                     class="journal-google-button"
                 >
 
@@ -87,6 +102,7 @@
                     </div>
 
                     <div>
+
                         <strong>
                             Your journal stays yours.
                         </strong>
@@ -95,6 +111,7 @@
                             Sign-in protects your private entries and
                             keeps your journal separated from other users.
                         </p>
+
                     </div>
 
                 </div>
@@ -131,8 +148,11 @@
 
     <script type="module">
 
-        import { initializeApp }
+        import {
+            initializeApp
+        }
         from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
 
         import {
             getAuth,
@@ -143,79 +163,148 @@
 
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDInuEZ0kbHbdcMj0KHa7839jxVs1s6nrY",
-            authDomain: "gen-lang-client-0715483676.firebaseapp.com",
-            projectId: "gen-lang-client-0715483676",
-            storageBucket: "gen-lang-client-0715483676.firebasestorage.app",
-            messagingSenderId: "767164856928",
-            appId: "1:767164856928:web:94244abcce245c0f1da105",
-            measurementId: "G-Y4CRR20E2T"
+
+            apiKey:
+                "AIzaSyDInuEZ0kbHbdcMj0KHa7839jxVs1s6nrY",
+
+            authDomain:
+                "gen-lang-client-0715483676.firebaseapp.com",
+
+            projectId:
+                "gen-lang-client-0715483676",
+
+            storageBucket:
+                "gen-lang-client-0715483676.firebasestorage.app",
+
+            messagingSenderId:
+                "767164856928",
+
+            appId:
+                "1:767164856928:web:94244abcce245c0f1da105",
+
+            measurementId:
+                "G-Y4CRR20E2T"
+
         };
 
 
-        const app = initializeApp(firebaseConfig);
+        const app =
+            initializeApp(
+                firebaseConfig
+            );
 
-        const auth = getAuth(app);
 
-        const provider = new GoogleAuthProvider();
+        const auth =
+            getAuth(app);
+
+
+        const provider =
+            new GoogleAuthProvider();
 
 
         document
-            .getElementById("google-login")
-            .addEventListener("click", async () => {
+            .getElementById(
+                "google-login"
+            )
+            .addEventListener(
+                "click",
+                async () => {
 
-                const button =
-                    document.getElementById("google-login");
-
-                const errorBox =
-                    document.getElementById("login-error");
-
-                try {
-
-                    errorBox.textContent = "";
-
-                    button.disabled = true;
-
-                    button.querySelector(
-                        "span:last-child"
-                    ).textContent = "Opening Google...";
+                    const button =
+                        document.getElementById(
+                            "google-login"
+                        );
 
 
-                    const result =
-                        await signInWithPopup(auth, provider);
-
-                    const user = result.user;
-
-                    const idToken =
-                        await user.getIdToken();
+                    const errorBox =
+                        document.getElementById(
+                            "login-error"
+                        );
 
 
-                    const response = await fetch(
-                        "/auth/login",
-                        {
-                            method: "POST",
+                    try {
 
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
+                        errorBox.textContent = "";
 
-                            body: JSON.stringify({
-                                token: idToken
-                            })
+                        button.disabled = true;
+
+
+                        button.querySelector(
+                            "span:last-child"
+                        ).textContent =
+                            "Opening Google...";
+
+
+                        const result =
+                            await signInWithPopup(
+                                auth,
+                                provider
+                            );
+
+
+                        const user =
+                            result.user;
+
+
+                        const idToken =
+                            await user.getIdToken();
+
+
+                        const response =
+                            await fetch(
+                                "/auth/login",
+                                {
+                                    method: "POST",
+
+                                    headers: {
+                                        "Content-Type":
+                                            "application/json"
+                                    },
+
+                                    body: JSON.stringify({
+                                        token: idToken
+                                    })
+                                }
+                            );
+
+
+                        if (response.ok) {
+
+                            window.location.href =
+                                "/";
+
+                        } else {
+
+                            errorBox.textContent =
+                                "Login verification failed.";
+
+
+                            button.disabled =
+                                false;
+
+
+                            button.querySelector(
+                                "span:last-child"
+                            ).textContent =
+                                "Continue with Google";
+
                         }
-                    );
 
+                    } catch (error) {
 
-                    if (response.ok) {
+                        console.error(
+                            "Google sign-in error:",
+                            error
+                        );
 
-                        window.location.href = "/";
-
-                    } else {
 
                         errorBox.textContent =
-                            "Login verification failed.";
+                            "Google sign-in failed.";
 
-                        button.disabled = false;
+
+                        button.disabled =
+                            false;
+
 
                         button.querySelector(
                             "span:last-child"
@@ -224,25 +313,11 @@
 
                     }
 
-                } catch (error) {
-
-                    console.error(error);
-
-                    errorBox.textContent =
-                        "Google sign-in failed.";
-
-                    button.disabled = false;
-
-                    button.querySelector(
-                        "span:last-child"
-                    ).textContent =
-                        "Continue with Google";
-
                 }
-
-            });
+            );
 
     </script>
 
 </body>
+
 </html>

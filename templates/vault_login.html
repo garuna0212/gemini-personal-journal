@@ -1,37 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Vault</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Vault
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body>
 
     <div class="container vault-login">
 
-        <h1>Vault</h1>
+        <h1>
+            Vault
+        </h1>
 
         <p class="subtitle">
             Enter your PIN to unlock private entries.
         </p>
 
+
         {% if error %}
+
             <div class="vault-error">
                 {{ error }}
             </div>
+
         {% endif %}
 
-        <form action="/vault-unlock" method="post">
+
+        <form
+            action="/vault-unlock"
+            method="post"
+        >
+
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
 
             <input
                 type="password"
                 name="pin"
                 maxlength="8"
                 placeholder="Enter PIN"
+                inputmode="numeric"
+                autocomplete="current-password"
                 required
                 class="pin-input"
             >
@@ -41,15 +69,25 @@
             </button>
 
         </form>
-        <a href="/vault-reauth" class="back-link">
+
+
+        <a
+            href="/vault-reauth"
+            class="back-link"
+        >
             Forgot PIN?
         </a>
 
-        <a href="/" class="back-link">
+
+        <a
+            href="/"
+            class="back-link"
+        >
             Back to Journal
         </a>
 
     </div>
 
 </body>
+
 </html>

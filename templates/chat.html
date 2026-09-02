@@ -55,6 +55,12 @@
 
             <form action="/chat/new" method="post">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
+
                 <button
                     type="submit"
                     class="new-conversation-button"
@@ -103,6 +109,12 @@
                     method="post"
                     onsubmit="return confirmSelectedDelete();"
                 >
+
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token(request) }}"
+                    >
 
                     <div class="conversation-list">
 
@@ -249,6 +261,12 @@
                     onsubmit="showSending(this)"
                 >
 
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token(request) }}"
+                    >
+
                     <textarea
                         name="message"
                         class="chat-input"
@@ -282,6 +300,12 @@
                     class="end-conversation-form"
                     onsubmit="showSummarizing(this)"
                 >
+
+                    <input
+                        type="hidden"
+                        name="csrf_token"
+                        value="{{ csrf_token(request) }}"
+                    >
 
                     <div class="end-conversation-copy">
 

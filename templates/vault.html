@@ -54,6 +54,12 @@
 
             <form action="/vault-lock" method="post">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
+
                 <button
                     type="submit"
                     class="vault-lock-button"
@@ -134,6 +140,12 @@
                                             action="/vault-reanalyze/{{ entry.id }}"
                                             method="post"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
                                             <button
                                                 type="submit"
                                                 onclick="showAnalyzing(this)"
@@ -147,6 +159,12 @@
                                             action="/remove-from-vault/{{ entry.id }}"
                                             method="post"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
                                             <button type="submit">
                                                 Remove from Vault
                                             </button>
@@ -158,6 +176,12 @@
                                             method="post"
                                             onsubmit="return confirm('Delete this entry permanently?');"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
                                             <button
                                                 type="submit"
                                                 class="vault-delete-button"
@@ -185,6 +209,12 @@
                                     action="/vault-edit/{{ entry.id }}"
                                     method="post"
                                 >
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="{{ csrf_token(request) }}"
+                                    >
 
                                     <label
                                         for="vault-content-{{ entry.id }}"
@@ -231,7 +261,9 @@
                                         ✦ Gemini Reflection
                                     </div>
 
-                                    <p>{{ entry.analysis | trim }}</p>
+                                    <div class="markdown-content">
+                                        {{ entry.analysis | markdown }}
+                                    </div>
 
                                 </div>
 

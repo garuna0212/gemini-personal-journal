@@ -1,33 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Verify Identity - Gemini Personal Journal</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Verify Identity - Gemini Personal Journal
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body>
 
     <div class="container vault-login">
 
-        <h1>Verify Your Identity</h1>
+        <h1>
+            Verify Your Identity
+        </h1>
 
         <p class="subtitle">
             Re-authenticate with Google before resetting your Vault PIN.
         </p>
 
-        <button id="reauth-button">
+
+        <button
+            id="reauth-button"
+            type="button"
+        >
             Verify with Google
         </button>
 
-        <p id="reauth-error" class="vault-error"></p>
+
+        <p
+            id="reauth-error"
+            class="vault-error"
+        ></p>
+
 
         <br>
 
-        <a href="/vault" class="back-link">
+
+        <a
+            href="/vault"
+            class="back-link"
+        >
             Back to Vault
         </a>
 
@@ -36,8 +62,11 @@
 
     <script type="module">
 
-        import { initializeApp }
+        import {
+            initializeApp
+        }
         from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+
 
         import {
             getAuth,
@@ -49,41 +78,75 @@
 
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDInuEZ0kbHbdcMj0KHa7839jxVs1s6nrY",
-            authDomain: "gen-lang-client-0715483676.firebaseapp.com",
-            projectId: "gen-lang-client-0715483676",
-            storageBucket: "gen-lang-client-0715483676.firebasestorage.app",
-            messagingSenderId: "767164856928",
-            appId: "1:767164856928:web:94244abcce245c0f1da105",
-            measurementId: "G-Y4CRR20E2T"
+
+            apiKey:
+                "AIzaSyDInuEZ0kbHbdcMj0KHa7839jxVs1s6nrY",
+
+            authDomain:
+                "gen-lang-client-0715483676.firebaseapp.com",
+
+            projectId:
+                "gen-lang-client-0715483676",
+
+            storageBucket:
+                "gen-lang-client-0715483676.firebasestorage.app",
+
+            messagingSenderId:
+                "767164856928",
+
+            appId:
+                "1:767164856928:web:94244abcce245c0f1da105",
+
+            measurementId:
+                "G-Y4CRR20E2T"
+
         };
 
 
-        const app = initializeApp(firebaseConfig);
+        const app =
+            initializeApp(
+                firebaseConfig
+            );
 
-        const auth = getAuth(app);
 
-        const provider = new GoogleAuthProvider();
+        const auth =
+            getAuth(app);
+
+
+        const provider =
+            new GoogleAuthProvider();
+
 
         const reauthButton =
-            document.getElementById("reauth-button");
+            document.getElementById(
+                "reauth-button"
+            );
+
 
         const errorMessage =
-            document.getElementById("reauth-error");
+            document.getElementById(
+                "reauth-error"
+            );
+
 
         let currentUser = null;
 
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(
+            auth,
+            (user) => {
 
-            currentUser = user;
+                currentUser = user;
 
-            if (!user) {
-                errorMessage.textContent =
-                    "Firebase session not found. Please sign in again.";
+                if (!user) {
+
+                    errorMessage.textContent =
+                        "Firebase session not found. Please sign in again.";
+
+                }
+
             }
-
-        });
+        );
 
 
         reauthButton.addEventListener(
@@ -92,13 +155,16 @@
 
                 errorMessage.textContent = "";
 
+
                 if (!currentUser) {
 
                     errorMessage.textContent =
                         "Please sign in again before resetting your Vault PIN.";
 
                     return;
+
                 }
+
 
                 try {
 
@@ -115,30 +181,37 @@
 
 
                     const idToken =
-                        await currentUser.getIdToken(true);
+                        await currentUser.getIdToken(
+                            true
+                        );
 
 
-                    const response = await fetch(
-                        "/vault-reauth",
-                        {
-                            method: "POST",
+                    const response =
+                        await fetch(
+                            "/vault-reauth",
+                            {
+                                method: "POST",
 
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
 
-                            body: JSON.stringify({
-                                token: idToken
-                            })
-                        }
-                    );
+                                body: JSON.stringify({
+                                    token: idToken
+                                })
+                            }
+                        );
 
 
                     const result =
                         await response.json();
 
 
-                    if (response.ok && result.success) {
+                    if (
+                        response.ok &&
+                        result.success
+                    ) {
 
                         window.location.href =
                             "/vault-reset";
@@ -149,7 +222,9 @@
                             result.message ||
                             "Google verification failed.";
 
-                        reauthButton.disabled = false;
+
+                        reauthButton.disabled =
+                            false;
 
                         reauthButton.textContent =
                             "Verify with Google";
@@ -163,10 +238,13 @@
                         error
                     );
 
+
                     errorMessage.textContent =
                         "Google verification was cancelled or failed.";
 
-                    reauthButton.disabled = false;
+
+                    reauthButton.disabled =
+                        false;
 
                     reauthButton.textContent =
                         "Verify with Google";
@@ -179,4 +257,5 @@
     </script>
 
 </body>
+
 </html>

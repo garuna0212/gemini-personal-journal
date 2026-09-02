@@ -1,17 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Gemini Personal Journal</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Gemini Personal Journal
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body class="journal-page">
 
     <div class="container">
+
+        <!-- =====================================================
+             HEADER
+        ====================================================== -->
 
         <header class="app-header">
 
@@ -22,6 +37,7 @@
                 </div>
 
                 <div>
+
                     <h2 class="brand-name">
                         Gemini Journal
                     </h2>
@@ -29,12 +45,22 @@
                     <span class="brand-tagline">
                         Your private reflection space
                     </span>
+
                 </div>
 
             </div>
 
 
-            <form action="/logout" method="post">
+            <form
+                action="/logout"
+                method="post"
+            >
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                 <button
                     type="submit"
@@ -47,6 +73,10 @@
 
         </header>
 
+
+        <!-- =====================================================
+             WELCOME
+        ====================================================== -->
 
         <section class="welcome-section">
 
@@ -65,6 +95,10 @@
 
         </section>
 
+
+        <!-- =====================================================
+             NAVIGATION
+        ====================================================== -->
 
         <nav class="journal-navigation">
 
@@ -154,6 +188,10 @@
         </nav>
 
 
+        <!-- =====================================================
+             JOURNAL COMPOSER
+        ====================================================== -->
+
         <section class="journal-composer">
 
             <div class="section-heading">
@@ -178,7 +216,16 @@
             </div>
 
 
-            <form action="/save" method="post">
+            <form
+                action="/save"
+                method="post"
+            >
+
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token(request) }}"
+                >
 
                 <textarea
                     name="entry"
@@ -202,7 +249,6 @@
                         type="submit"
                         formaction="/analyze"
                         class="primary-button"
-                        onclick="showAnalyzing(this)"
                     >
                         ✨ Analyze with Gemini
                     </button>
@@ -213,6 +259,25 @@
 
         </section>
 
+
+        <!-- =====================================================
+             GEMINI ERROR
+        ====================================================== -->
+
+        {% if gemini_error %}
+
+            <div class="gemini-error">
+
+                {{ gemini_error }}
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- =====================================================
+             GEMINI ANALYSIS
+        ====================================================== -->
 
         {% if analysis %}
 
@@ -239,6 +304,10 @@
 
                 </div>
 
+
+                <!-- =============================================
+                     AI GUARDIAN
+                ============================================== -->
 
                 {% if detected %}
 
@@ -325,13 +394,19 @@
                 {% endif %}
 
 
+                <!-- =============================================
+                     GEMINI RESULT
+                ============================================== -->
+
                 <div class="gemini-result">
 
                     <h3>
                         Reflection
                     </h3>
 
-                    <p>{{ analysis | trim }}</p>
+                    <div class="markdown-content">
+                        {{ analysis | markdown }}
+                    </div>
 
                 </div>
 
@@ -339,6 +414,10 @@
 
         {% endif %}
 
+
+        <!-- =====================================================
+             PREVIOUS ENTRIES
+        ====================================================== -->
 
         <section class="entries-section">
 
@@ -367,6 +446,10 @@
 
                         <article class="entry journal-entry-card">
 
+                            <!-- =================================
+                                 ENTRY HEADER
+                            ================================== -->
+
                             <div class="entry-header">
 
                                 <div class="entry-date">
@@ -381,6 +464,10 @@
 
                                 </div>
 
+
+                                <!-- =============================
+                                     MENU
+                                ============================== -->
 
                                 <div class="menu-wrapper">
 
@@ -412,6 +499,12 @@
                                             method="post"
                                         >
 
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
+
                                             <button
                                                 type="submit"
                                                 onclick="showAnalyzing(this)"
@@ -427,7 +520,15 @@
                                             method="post"
                                         >
 
-                                            <button type="submit">
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                            >
                                                 Archive
                                             </button>
 
@@ -439,7 +540,15 @@
                                             method="post"
                                         >
 
-                                            <button type="submit">
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                            >
                                                 Move to Vault
                                             </button>
 
@@ -451,6 +560,12 @@
                                             method="post"
                                             onsubmit="return confirm('Delete this journal entry?');"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
 
                                             <button
                                                 type="submit"
@@ -468,8 +583,16 @@
                             </div>
 
 
+                            <!-- =================================
+                                 ENTRY TEXT
+                            ================================== -->
+
                             <p class="entry-text">{{ entry.content | trim }}</p>
 
+
+                            <!-- =================================
+                                 EDIT SECTION
+                            ================================== -->
 
                             <div
                                 id="edit-{{ entry.id }}"
@@ -480,6 +603,12 @@
                                     action="/edit/{{ entry.id }}"
                                     method="post"
                                 >
+
+                                    <input
+                                        type="hidden"
+                                        name="csrf_token"
+                                        value="{{ csrf_token(request) }}"
+                                    >
 
                                     <textarea
                                         name="content"
@@ -499,6 +628,10 @@
                             </div>
 
 
+                            <!-- =================================
+                                 SAVED GEMINI ANALYSIS
+                            ================================== -->
+
                             {% if entry.analysis %}
 
                                 <div class="journal-analysis">
@@ -507,7 +640,9 @@
                                         ✦ Gemini Reflection
                                     </div>
 
-                                    <p>{{ entry.analysis | trim }}</p>
+                                    <div class="markdown-content">
+                                        {{ entry.analysis | markdown }}
+                                    </div>
 
                                 </div>
 
@@ -546,26 +681,44 @@
     </div>
 
 
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+
     <script>
 
         function toggleMenu(id) {
 
             const menus =
-                document.querySelectorAll(".entry-menu");
+                document.querySelectorAll(
+                    ".entry-menu"
+                );
 
-            menus.forEach((menu) => {
+            menus.forEach(
+                (menu) => {
 
-                if (menu.id !== id) {
-                    menu.classList.remove("show-menu");
+                    if (menu.id !== id) {
+
+                        menu.classList.remove(
+                            "show-menu"
+                        );
+
+                    }
+
                 }
-
-            });
+            );
 
 
             const menu =
                 document.getElementById(id);
 
-            menu.classList.toggle("show-menu");
+            if (menu) {
+
+                menu.classList.toggle(
+                    "show-menu"
+                );
+
+            }
 
         }
 
@@ -575,7 +728,13 @@
             const editSection =
                 document.getElementById(id);
 
-            editSection.classList.toggle("show-edit");
+            if (editSection) {
+
+                editSection.classList.toggle(
+                    "show-edit"
+                );
+
+            }
 
         }
 
@@ -595,16 +754,24 @@
             function(event) {
 
                 if (
-                    !event.target.closest(".menu-wrapper")
+                    !event.target.closest(
+                        ".menu-wrapper"
+                    )
                 ) {
 
                     document
-                        .querySelectorAll(".entry-menu")
-                        .forEach((menu) => {
+                        .querySelectorAll(
+                            ".entry-menu"
+                        )
+                        .forEach(
+                            (menu) => {
 
-                            menu.classList.remove("show-menu");
+                                menu.classList.remove(
+                                    "show-menu"
+                                );
 
-                        });
+                            }
+                        );
 
                 }
 
@@ -614,4 +781,5 @@
     </script>
 
 </body>
+
 </html>

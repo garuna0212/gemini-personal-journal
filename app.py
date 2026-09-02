@@ -1,6 +1,8 @@
 import os
 import time
 from datetime import timezone, timedelta
+import secrets
+import hmac
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
@@ -14,6 +16,9 @@ from firebase_auth import verify_firebase_token
 from starlette.middleware.sessions import SessionMiddleware
 from secret_manager import get_session_secret
 from typing import List
+import markdown
+import bleach
+from markupsafe import Markup
 from firestore_db import (
     add_entry as firestore_add_entry,
     get_entries as firestore_get_entries,
@@ -73,10 +78,99 @@ def format_datetime_india(value):
     return value.astimezone(INDIA_TIMEZONE).strftime(
         "%d %b %Y · %I:%M %p"
     )
-
-
 templates.env.filters["india_datetime"] = format_datetime_india
+ALLOWED_MARKDOWN_TAGS = [
+    "p",
+    "br",
+    "strong",
+    "em",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+]
+
+def render_markdown(value):
+    if not value:
+        return ""
+
+    rendered = markdown.markdown(
+        value,
+        extensions=["nl2br"]
+    )
+
+    cleaned = bleach.clean(
+        rendered,
+        tags=ALLOWED_MARKDOWN_TAGS,
+        attributes={},
+        strip=True
+    )
+
+    return Markup(cleaned)
+def require_vault_access(request: Request):
+    user = request.session.get("user")
+
+    if not user:
+        return None, RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not request.session.get(
+        "vault_unlocked",
+        False
+    ):
+        return None, RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
+
+    return user, None
+
+
+templates.env.filters["markdown"] = render_markdown
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+def get_csrf_token(request: Request):
+    token = request.session.get("csrf_token")
+
+    if not token:
+        token = secrets.token_urlsafe(32)
+        request.session["csrf_token"] = token
+
+    return token
+
+
+def verify_csrf_token(
+    request: Request,
+    submitted_token: str
+):
+    session_token = request.session.get(
+        "csrf_token"
+    )
+
+    if not session_token:
+        return False
+
+    if not submitted_token:
+        return False
+
+    return hmac.compare_digest(
+        session_token,
+        submitted_token
+    )
+templates.env.globals["csrf_token"] = get_csrf_token
+
+
+def csrf_error_response():
+    return HTMLResponse(
+        content="Invalid or missing CSRF token.",
+        status_code=403
+    )
 
 
 class LoginRequest(BaseModel):
@@ -139,8 +233,15 @@ def home(request: Request):
             "user": user
         }
     )
+
 @app.post("/logout")
-def logout(request: Request):
+def logout(
+    request: Request,
+    csrf_token: str = Form(...)
+):
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     request.session.clear()
 
     return RedirectResponse(
@@ -148,8 +249,13 @@ def logout(request: Request):
         status_code=303
     )
 
+
 @app.post("/save", response_class=HTMLResponse)
-def save_entry(request: Request, entry: str = Form(...)):
+def save_entry(
+    request: Request,
+    entry: str = Form(...),
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -157,6 +263,9 @@ def save_entry(request: Request, entry: str = Form(...)):
             url="/login",
             status_code=303
         )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -169,8 +278,14 @@ def save_entry(request: Request, entry: str = Form(...)):
         url="/",
         status_code=303
     )
+
+
 @app.post("/analyze", response_class=HTMLResponse)
-def analyze_entry(request: Request, entry: str = Form(...)):
+def analyze_entry(
+    request: Request,
+    entry: str = Form(...),
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -179,6 +294,9 @@ def analyze_entry(request: Request, entry: str = Form(...)):
             status_code=303
         )
 
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     uid = user["uid"]
 
     result = analyze_journal(entry)
@@ -186,12 +304,17 @@ def analyze_entry(request: Request, entry: str = Form(...)):
     analysis = result["analysis"]
     detected = result["detected"]
     protected_text = result["protected_text"]
+    gemini_error = result.get("error")
 
-    firestore_add_entry(
-        uid,
-        entry,
-        analysis
-    )
+    # Only save an analyzed entry when Gemini succeeds.
+    # This prevents duplicate blank entries if the user retries after a
+    # temporary Gemini service error.
+    if analysis:
+        firestore_add_entry(
+            uid,
+            entry,
+            analysis
+        )
 
     entries = firestore_get_entries(uid)
 
@@ -203,38 +326,18 @@ def analyze_entry(request: Request, entry: str = Form(...)):
             "analysis": analysis,
             "detected": detected,
             "protected_text": protected_text,
+            "gemini_error": gemini_error,
             "current_entry": entry,
             "user": user
         }
     )
+
+
 @app.post("/delete/{entry_id}")
-def remove_entry(request: Request, entry_id: str):
-    user = request.session.get("user")
-
-    if not user:
-        return RedirectResponse(
-            url="/login",
-            status_code=303
-        )
-
-    uid = user["uid"]
-
-    firestore_delete_entry(
-        uid,
-        entry_id
-    )
-
-    return RedirectResponse(
-        url="/",
-        status_code=303
-    )
-
-
-@app.post("/edit/{entry_id}")
-def edit_entry(
+def remove_entry(
     request: Request,
     entry_id: str,
-    content: str = Form(...)
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
@@ -244,7 +347,86 @@ def edit_entry(
             status_code=303
         )
 
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     uid = user["uid"]
+
+    entry = firestore_get_entry(
+        uid,
+        entry_id
+    )
+
+    if not entry:
+        return RedirectResponse(
+            url="/",
+            status_code=303
+        )
+
+    # A vaulted entry may only be deleted while the Vault is unlocked.
+    if (
+        entry.get("vaulted", False)
+        and not request.session.get("vault_unlocked", False)
+    ):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
+
+    firestore_delete_entry(
+        uid,
+        entry_id
+    )
+
+    redirect_url = (
+        "/vault"
+        if entry.get("vaulted", False)
+        else "/"
+    )
+
+    return RedirectResponse(
+        url=redirect_url,
+        status_code=303
+    )
+
+
+@app.post("/edit/{entry_id}")
+def edit_entry(
+    request: Request,
+    entry_id: str,
+    content: str = Form(...),
+    csrf_token: str = Form(...)
+):
+    user = request.session.get("user")
+
+    if not user:
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
+    uid = user["uid"]
+
+    entry = firestore_get_entry(
+        uid,
+        entry_id
+    )
+
+    if not entry:
+        return RedirectResponse(
+            url="/",
+            status_code=303
+        )
+
+    # Vault entries must use the dedicated Vault edit route.
+    if entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
 
     firestore_update_entry(
         uid,
@@ -256,10 +438,13 @@ def edit_entry(
         url="/",
         status_code=303
     )
+
+
 @app.post("/chat/delete-selected")
 def delete_selected_conversations(
     request: Request,
-    conversation_ids: List[str] = Form(...)
+    conversation_ids: List[str] = Form(...),
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
@@ -268,6 +453,9 @@ def delete_selected_conversations(
             url="/login",
             status_code=303
         )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -281,8 +469,14 @@ def delete_selected_conversations(
         url="/chat",
         status_code=303
     )
+
+
 @app.post("/archive/{entry_id}")
-def archive(request: Request, entry_id: str):
+def archive(
+    request: Request,
+    entry_id: str,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -291,7 +485,24 @@ def archive(request: Request, entry_id: str):
             status_code=303
         )
 
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     uid = user["uid"]
+
+    entry = firestore_get_entry(uid, entry_id)
+
+    if not entry:
+        return RedirectResponse(
+            url="/",
+            status_code=303
+        )
+
+    if entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
 
     firestore_archive_entry(uid, entry_id)
 
@@ -302,7 +513,11 @@ def archive(request: Request, entry_id: str):
 
 
 @app.post("/restore/{entry_id}")
-def restore(request: Request, entry_id: str):
+def restore(
+    request: Request,
+    entry_id: str,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -311,7 +526,24 @@ def restore(request: Request, entry_id: str):
             status_code=303
         )
 
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     uid = user["uid"]
+
+    entry = firestore_get_entry(uid, entry_id)
+
+    if not entry:
+        return RedirectResponse(
+            url="/archive",
+            status_code=303
+        )
+
+    if entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
 
     firestore_restore_entry(uid, entry_id)
 
@@ -319,7 +551,6 @@ def restore(request: Request, entry_id: str):
         url="/archive",
         status_code=303
     )
-
 
 @app.get("/archive", response_class=HTMLResponse)
 def archive_page(request: Request):
@@ -344,8 +575,13 @@ def archive_page(request: Request):
             "user": user
         }
     )
+
 @app.post("/reanalyze/{entry_id}")
-def reanalyze(request: Request, entry_id: str):
+def reanalyze(
+    request: Request,
+    entry_id: str,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -353,6 +589,9 @@ def reanalyze(request: Request, entry_id: str):
             url="/login",
             status_code=303
         )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -364,21 +603,35 @@ def reanalyze(request: Request, entry_id: str):
             status_code=303
         )
 
-    result = analyze_journal(entry["content"])
+    if entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
 
-    firestore_update_analysis(
-        uid,
-        entry_id,
-        result["analysis"]
+    result = analyze_journal(
+        entry["content"]
     )
+
+    if result.get("analysis"):
+        firestore_update_analysis(
+            uid,
+            entry_id,
+            result["analysis"]
+        )
 
     return RedirectResponse(
         url="/",
         status_code=303
     )
 
+
 @app.post("/move-to-vault/{entry_id}")
-def vault_entry(request: Request, entry_id: str):
+def vault_entry(
+    request: Request,
+    entry_id: str,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -387,7 +640,18 @@ def vault_entry(request: Request, entry_id: str):
             status_code=303
         )
 
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
     uid = user["uid"]
+
+    entry = firestore_get_entry(uid, entry_id)
+
+    if not entry:
+        return RedirectResponse(
+            url="/",
+            status_code=303
+        )
 
     firestore_move_to_vault(uid, entry_id)
 
@@ -482,18 +746,28 @@ def vault_reset_page(request: Request):
         name="vault_reset.html",
         context={"error": None}
     )
+
 @app.post("/vault-reset", response_class=HTMLResponse)
 def vault_reset(
     request: Request,
     pin: str = Form(...),
-    confirm_pin: str = Form(...)
+    confirm_pin: str = Form(...),
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
 
-    verified_at = request.session.get("vault_reset_verified_at")
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
+    verified_at = request.session.get(
+        "vault_reset_verified_at"
+    )
 
     if not verified_at:
         return RedirectResponse(
@@ -502,7 +776,10 @@ def vault_reset(
         )
 
     if time.time() - verified_at > 300:
-        request.session.pop("vault_reset_verified_at", None)
+        request.session.pop(
+            "vault_reset_verified_at",
+            None
+        )
 
         return RedirectResponse(
             url="/vault-reauth",
@@ -513,21 +790,27 @@ def vault_reset(
         return templates.TemplateResponse(
             request=request,
             name="vault_reset.html",
-            context={"error": "PINs do not match"}
+            context={
+                "error": "PINs do not match"
+            }
         )
 
     if len(pin) < 4:
         return templates.TemplateResponse(
             request=request,
             name="vault_reset.html",
-            context={"error": "PIN must be at least 4 digits"}
+            context={
+                "error": "PIN must be at least 4 digits"
+            }
         )
 
     if not pin.isdigit():
         return templates.TemplateResponse(
             request=request,
             name="vault_reset.html",
-            context={"error": "PIN must contain only numbers"}
+            context={
+                "error": "PIN must contain only numbers"
+            }
         )
 
     uid = user["uid"]
@@ -540,8 +823,11 @@ def vault_reset(
         result["hash"]
     )
 
-    # Reset permission can only be used once
-    request.session.pop("vault_reset_verified_at", None)
+    # Reset permission can only be used once.
+    request.session.pop(
+        "vault_reset_verified_at",
+        None
+    )
 
     request.session["vault_unlocked"] = True
 
@@ -550,25 +836,42 @@ def vault_reset(
         status_code=303
     )
 
-@app.post("/remove-from-vault/{entry_id}")
-def unvault_entry(request: Request, entry_id: str):
-    user = request.session.get("user")
 
-    if not user:
-        return RedirectResponse(
-            url="/login",
-            status_code=303
-        )
+@app.post("/remove-from-vault/{entry_id}")
+def unvault_entry(
+    request: Request,
+    entry_id: str,
+    csrf_token: str = Form(...)
+):
+    user, redirect = require_vault_access(
+        request
+    )
+
+    if redirect:
+        return redirect
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
-    firestore_remove_from_vault(uid, entry_id)
+    entry = firestore_get_entry(uid, entry_id)
+
+    if not entry or not entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
+
+    firestore_remove_from_vault(
+        uid,
+        entry_id
+    )
 
     return RedirectResponse(
         url="/vault",
         status_code=303
     )
-
 
 @app.get("/vault", response_class=HTMLResponse)
 def vault_page(request: Request):
@@ -607,38 +910,60 @@ def vault_page(request: Request):
             "user": user
         }
     )
+
 @app.post("/vault-setup", response_class=HTMLResponse)
 def setup_vault_pin(
     request: Request,
     pin: str = Form(...),
-    confirm_pin: str = Form(...)
+    confirm_pin: str = Form(...),
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
+
+    # Never allow the setup endpoint to overwrite an existing PIN.
+    # Existing PINs must be changed through the reauthentication/reset flow.
+    if get_vault_pin(uid) is not None:
+        return RedirectResponse(
+            url="/vault",
+            status_code=303
+        )
 
     if pin != confirm_pin:
         return templates.TemplateResponse(
             request=request,
             name="vault_setup.html",
-            context={"error": "PINs do not match"}
+            context={
+                "error": "PINs do not match"
+            }
         )
 
     if len(pin) < 4:
         return templates.TemplateResponse(
             request=request,
             name="vault_setup.html",
-            context={"error": "PIN must be at least 4 digits"}
+            context={
+                "error": "PIN must be at least 4 digits"
+            }
         )
 
     if not pin.isdigit():
         return templates.TemplateResponse(
             request=request,
             name="vault_setup.html",
-            context={"error": "PIN must contain only numbers"}
+            context={
+                "error": "PIN must contain only numbers"
+            }
         )
 
     result = hash_pin(pin)
@@ -656,15 +981,23 @@ def setup_vault_pin(
         status_code=303
     )
 
+
 @app.post("/vault-unlock", response_class=HTMLResponse)
 def unlock_vault(
     request: Request,
-    pin: str = Form(...)
+    pin: str = Form(...),
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -691,13 +1024,32 @@ def unlock_vault(
     return templates.TemplateResponse(
         request=request,
         name="vault_login.html",
-        context={"error": "Incorrect PIN"}
+        context={
+            "error": "Incorrect PIN"
+        }
     )
 
 
 @app.post("/vault-lock")
-def lock_vault(request: Request):
-    request.session.pop("vault_unlocked", None)
+def lock_vault(
+    request: Request,
+    csrf_token: str = Form(...)
+):
+    user = request.session.get("user")
+
+    if not user:
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
+    request.session.pop(
+        "vault_unlocked",
+        None
+    )
 
     return RedirectResponse(
         url="/",
@@ -709,17 +1061,37 @@ def lock_vault(request: Request):
 def edit_vault_entry(
     request: Request,
     entry_id: str,
-    content: str = Form(...)
+    content: str = Form(...),
+    csrf_token: str = Form(...)
 ):
-    user = request.session.get("user")
+    user, redirect = require_vault_access(
+        request
+    )
 
-    if not user:
+    if redirect:
+        return redirect
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
+
+    uid = user["uid"]
+
+    entry = firestore_get_entry(
+        uid,
+        entry_id
+    )
+
+    if not entry:
         return RedirectResponse(
-            url="/login",
+            url="/vault",
             status_code=303
         )
 
-    uid = user["uid"]
+    if not entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/",
+            status_code=303
+        )
 
     firestore_update_entry(
         uid,
@@ -736,15 +1108,18 @@ def edit_vault_entry(
 @app.post("/vault-reanalyze/{entry_id}")
 def reanalyze_vault_entry(
     request: Request,
-    entry_id: str
+    entry_id: str,
+    csrf_token: str = Form(...)
 ):
-    user = request.session.get("user")
+    user, redirect = require_vault_access(
+        request
+    )
 
-    if not user:
-        return RedirectResponse(
-            url="/login",
-            status_code=303
-        )
+    if redirect:
+        return redirect
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -753,9 +1128,15 @@ def reanalyze_vault_entry(
         entry_id
     )
 
-    if entry is None:
+    if not entry:
         return RedirectResponse(
             url="/vault",
+            status_code=303
+        )
+
+    if not entry.get("vaulted", False):
+        return RedirectResponse(
+            url="/",
             status_code=303
         )
 
@@ -763,16 +1144,18 @@ def reanalyze_vault_entry(
         entry["content"]
     )
 
-    firestore_update_analysis(
-        uid,
-        entry_id,
-        result["analysis"]
-    )
+    if result.get("analysis"):
+        firestore_update_analysis(
+            uid,
+            entry_id,
+            result["analysis"]
+        )
 
     return RedirectResponse(
         url="/vault",
         status_code=303
     )
+
 @app.get("/chat", response_class=HTMLResponse)
 def chat_home(request: Request):
     user = request.session.get("user")
@@ -796,16 +1179,30 @@ def chat_home(request: Request):
             "conversation_id": None
         }
     )
+
 @app.post("/chat/{conversation_id}/summarize")
-def summarize_chat(request: Request, conversation_id: str):
+def summarize_chat(
+    request: Request,
+    conversation_id: str,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(
+            url="/login",
+            status_code=303
+        )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
-    messages = get_messages(uid, conversation_id)
+    messages = get_messages(
+        uid,
+        conversation_id
+    )
 
     if not messages:
         return RedirectResponse(
@@ -828,7 +1225,10 @@ def summarize_chat(request: Request, conversation_id: str):
 
 
 @app.post("/chat/new")
-def new_chat(request: Request):
+def new_chat(
+    request: Request,
+    csrf_token: str = Form(...)
+):
     user = request.session.get("user")
 
     if not user:
@@ -836,6 +1236,9 @@ def new_chat(request: Request):
             url="/login",
             status_code=303
         )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -848,7 +1251,6 @@ def new_chat(request: Request):
         url=f"/chat/{conversation_id}",
         status_code=303
     )
-
 
 @app.get("/chat/{conversation_id}", response_class=HTMLResponse)
 def open_chat(
@@ -883,11 +1285,13 @@ def open_chat(
     )
 
 
+
 @app.post("/chat/{conversation_id}/send")
 def send_chat_message(
     request: Request,
     conversation_id: str,
-    message: str = Form(...)
+    message: str = Form(...),
+    csrf_token: str = Form(...)
 ):
     user = request.session.get("user")
 
@@ -896,6 +1300,9 @@ def send_chat_message(
             url="/login",
             status_code=303
         )
+
+    if not verify_csrf_token(request, csrf_token):
+        return csrf_error_response()
 
     uid = user["uid"]
 
@@ -912,7 +1319,8 @@ def send_chat_message(
     )
 
     user_messages = [
-        m for m in messages_before_reply
+        m
+        for m in messages_before_reply
         if m["role"] == "user"
     ]
 
@@ -954,4 +1362,3 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     ) 
-

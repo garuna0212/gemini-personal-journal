@@ -1,37 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Archive | Gemini Journal</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Archive | Gemini Journal
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body class="archive-page">
 
     <div class="container">
 
+        <!-- =====================================================
+             PAGE HEADER
+        ====================================================== -->
+
         <div class="page-header archive-page-header">
 
             <div>
-                <p class="eyebrow">PRIVATE ARCHIVE</p>
 
-                <h1>Archive</h1>
+                <p class="eyebrow">
+                    PRIVATE ARCHIVE
+                </p>
+
+                <h1>
+                    Archive
+                </h1>
 
                 <p class="archive-page-subtitle">
-                    A quiet place for reflections you've chosen to set aside.
+                    A quiet place for reflections you've chosen
+                    to set aside.
                 </p>
+
             </div>
 
 
-            <a href="/" class="back-link">
+            <a
+                href="/"
+                class="back-link"
+            >
                 Back to Journal
             </a>
 
         </div>
 
+
+        <!-- =====================================================
+             ARCHIVED ENTRIES
+        ====================================================== -->
 
         {% if entries %}
 
@@ -40,18 +69,32 @@
                 <div class="archive-section-heading">
 
                     <div>
-                        <p class="eyebrow">SAVED REFLECTIONS</p>
 
-                        <h2>Archived entries</h2>
+                        <p class="eyebrow">
+                            SAVED REFLECTIONS
+                        </p>
+
+                        <h2>
+                            Archived entries
+                        </h2>
+
                     </div>
 
+
                     <span class="archive-count">
+
                         {{ entries | length }}
+
                         {% if entries | length == 1 %}
+
                             entry
+
                         {% else %}
+
                             entries
+
                         {% endif %}
+
                     </span>
 
                 </div>
@@ -62,6 +105,10 @@
                     {% for entry in entries %}
 
                         <article class="entry archive-entry-card">
+
+                            <!-- =================================
+                                 ENTRY HEADER
+                            ================================== -->
 
                             <div class="entry-header">
 
@@ -87,30 +134,54 @@
                                         class="entry-menu"
                                     >
 
+                                        <!-- =====================
+                                             RESTORE
+                                        ====================== -->
+
                                         <form
                                             action="/restore/{{ entry.id }}"
                                             method="post"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
+
                                             <button
                                                 type="submit"
                                                 class="restore-entry-button"
                                             >
                                                 Restore
                                             </button>
+
                                         </form>
 
+
+                                        <!-- =====================
+                                             DELETE
+                                        ====================== -->
 
                                         <form
                                             action="/delete/{{ entry.id }}"
                                             method="post"
                                             onsubmit="return confirm('Delete this entry permanently?');"
                                         >
+
+                                            <input
+                                                type="hidden"
+                                                name="csrf_token"
+                                                value="{{ csrf_token(request) }}"
+                                            >
+
                                             <button
                                                 type="submit"
                                                 class="archive-delete-button"
                                             >
                                                 Delete permanently
                                             </button>
+
                                         </form>
 
                                     </div>
@@ -120,8 +191,16 @@
                             </div>
 
 
+                            <!-- =================================
+                                 ENTRY TEXT
+                            ================================== -->
+
                             <p class="entry-text">{{ entry.content | trim }}</p>
 
+
+                            <!-- =================================
+                                 GEMINI ANALYSIS
+                            ================================== -->
 
                             {% if entry.analysis %}
 
@@ -131,7 +210,9 @@
                                         ✦ Gemini Reflection
                                     </div>
 
-                                    <p>{{ entry.analysis | trim }}</p>
+                                    <div class="markdown-content">
+                                        {{ entry.analysis | markdown }}
+                                    </div>
 
                                 </div>
 
@@ -148,20 +229,30 @@
 
         {% else %}
 
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================== -->
+
             <section class="archive-empty-state">
 
                 <div class="archive-empty-icon">
                     ◇
                 </div>
 
-                <h2>Your archive is empty</h2>
+                <h2>
+                    Your archive is empty
+                </h2>
 
                 <p>
-                    Entries you archive from your journal will appear here.
-                    You can restore them whenever you want.
+                    Entries you archive from your journal will
+                    appear here. You can restore them whenever
+                    you want.
                 </p>
 
-                <a href="/" class="archive-return-button">
+                <a
+                    href="/"
+                    class="archive-return-button"
+                >
                     Return to Journal
                 </a>
 
@@ -172,6 +263,10 @@
     </div>
 
 
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+
     <script>
 
         function toggleMenu(id) {
@@ -179,17 +274,29 @@
             const selectedMenu =
                 document.getElementById(id);
 
+            if (!selectedMenu) {
+                return;
+            }
+
+
             document
                 .querySelectorAll(".entry-menu")
                 .forEach((menu) => {
 
                     if (menu !== selectedMenu) {
-                        menu.classList.remove("show-menu");
+
+                        menu.classList.remove(
+                            "show-menu"
+                        );
+
                     }
 
                 });
 
-            selectedMenu.classList.toggle("show-menu");
+
+            selectedMenu.classList.toggle(
+                "show-menu"
+            );
 
         }
 
@@ -199,14 +306,20 @@
             function(event) {
 
                 if (
-                    !event.target.closest(".menu-wrapper")
+                    !event.target.closest(
+                        ".menu-wrapper"
+                    )
                 ) {
 
                     document
-                        .querySelectorAll(".entry-menu")
+                        .querySelectorAll(
+                            ".entry-menu"
+                        )
                         .forEach((menu) => {
 
-                            menu.classList.remove("show-menu");
+                            menu.classList.remove(
+                                "show-menu"
+                            );
 
                         });
 
@@ -218,4 +331,5 @@
     </script>
 
 </body>
+
 </html>

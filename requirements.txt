@@ -7,3 +7,5 @@ firebase-admin
 google-genai
 google-cloud-secret-manager
 itsdangerous
+markdown
+bleach

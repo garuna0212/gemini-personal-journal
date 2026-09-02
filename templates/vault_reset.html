@@ -1,63 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Reset Vault PIN</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <link rel="stylesheet" href="/static/style.css">
+    <title>
+        Reset Vault PIN
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body>
 
-<div class="container vault-login">
+    <div class="container vault-login">
 
-    <h1>Reset Vault PIN</h1>
+        <h1>
+            Reset Vault PIN
+        </h1>
 
-    <p class="subtitle">
-        Create a new PIN for your Vault.
-    </p>
+        <p class="subtitle">
+            Create a new PIN for your Vault.
+        </p>
 
-    {% if error %}
-        <div class="vault-error">
-            {{ error }}
-        </div>
-    {% endif %}
 
-    <form action="/vault-reset" method="post">
+        {% if error %}
 
-        <input
-            type="password"
-            name="pin"
-            class="pin-input"
-            placeholder="New PIN"
-            inputmode="numeric"
-            required
+            <div class="vault-error">
+                {{ error }}
+            </div>
+
+        {% endif %}
+
+
+        <form
+            action="/vault-reset"
+            method="post"
         >
 
-        <input
-            type="password"
-            name="confirm_pin"
-            class="pin-input"
-            placeholder="Confirm New PIN"
-            inputmode="numeric"
-            required
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
+
+
+            <input
+                type="password"
+                name="pin"
+                class="pin-input"
+                placeholder="New PIN"
+                inputmode="numeric"
+                autocomplete="new-password"
+                required
+            >
+
+
+            <input
+                type="password"
+                name="confirm_pin"
+                class="pin-input"
+                placeholder="Confirm New PIN"
+                inputmode="numeric"
+                autocomplete="new-password"
+                required
+            >
+
+
+            <button type="submit">
+                Reset PIN
+            </button>
+
+        </form>
+
+
+        <br>
+
+
+        <a
+            href="/vault"
+            class="back-link"
         >
+            Back to Vault
+        </a>
 
-        <button type="submit">
-            Reset PIN
-        </button>
-
-    </form>
-
-    <br>
-
-    <a href="/vault" class="back-link">
-        Back to Vault
-    </a>
-
-</div>
+    </div>
 
 </body>
+
 </html>

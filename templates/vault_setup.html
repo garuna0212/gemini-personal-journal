@@ -1,59 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Create Vault PIN</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Create Vault PIN
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
 </head>
+
 
 <body>
 
-<div class="container vault-login">
+    <div class="container vault-login">
 
-    <h1>Create Vault PIN</h1>
+        <h1>
+            Create Vault PIN
+        </h1>
 
-    <p class="subtitle">
-        Create a PIN to protect your private journal entries.
-    </p>
 
-    {% if error %}
-        <div class="vault-error">
-            {{ error }}
-        </div>
-    {% endif %}
+        <p class="subtitle">
+            Create a PIN to protect your private journal entries.
+        </p>
 
-    <form action="/vault-setup" method="post">
 
-        <input
-            type="password"
-            name="pin"
-            class="pin-input"
-            placeholder="Create PIN"
-            inputmode="numeric"
-            required
+        {% if error %}
+
+            <div class="vault-error">
+                {{ error }}
+            </div>
+
+        {% endif %}
+
+
+        <form
+            action="/vault-setup"
+            method="post"
         >
 
-        <input
-            type="password"
-            name="confirm_pin"
-            class="pin-input"
-            placeholder="Confirm PIN"
-            inputmode="numeric"
-            required
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token(request) }}"
+            >
+
+
+            <input
+                type="password"
+                name="pin"
+                class="pin-input"
+                placeholder="Create PIN"
+                inputmode="numeric"
+                autocomplete="new-password"
+                required
+            >
+
+
+            <input
+                type="password"
+                name="confirm_pin"
+                class="pin-input"
+                placeholder="Confirm PIN"
+                inputmode="numeric"
+                autocomplete="new-password"
+                required
+            >
+
+
+            <button type="submit">
+                Create Vault
+            </button>
+
+        </form>
+
+
+        <br>
+
+
+        <a
+            href="/"
+            class="back-link"
         >
+            Back to Journal
+        </a>
 
-        <button type="submit">
-            Create Vault
-        </button>
-
-    </form>
-
-    <br>
-
-    <a href="/" class="back-link">
-        Back to Journal
-    </a>
-
-</div>
+    </div>
 
 </body>
+
 </html>
